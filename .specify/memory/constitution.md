@@ -27,20 +27,23 @@ BIM Simple, su trabajo sigue siendo un IFC válido que cualquier programa BIM pu
 
 **Por qué:** el usuario es arquitecto, conoce ArchiCAD y no quiere aprender Blender.
 
-### III. Solo una capa de interfaz
+### III. Programa propio construido sobre Blender
 
-- Blender aporta el motor gráfico y Bonsai/IfcOpenShell aporta el modelo IFC. BIM Simple solo
-  agrega interfaz y herramientas de dibujo.
+- BIM Simple es un programa propio: se abre desde su acceso directo, con su nombre e icono, y
+  muestra directamente la interfaz de BIM Simple. El usuario NUNCA necesita ver ni usar la
+  interfaz de Blender.
+- Por dentro, Blender aporta el motor gráfico y Bonsai/IfcOpenShell aporta el modelo IFC, tal
+  como se publican: NUNCA se modifica su código. BIM Simple solo agrega interfaz y herramientas
+  de dibujo.
+- El programa lleva su propia copia de Blender y de Bonsai, con configuración aparte. Un Blender
+  instalado en la misma computadora NO se toca: ni sus preferencias, ni sus extensiones, ni su
+  archivo de inicio.
 - Los datos del edificio viven únicamente en el IFC. Las propiedades propias de BIM Simple
   solo guardan ajustes de la interfaz (valores del Info Box, piso activo).
-- NUNCA se modifican archivos de Bonsai ni de Blender, ni sus preferencias, ni el archivo de
-  inicio de Blender.
-- Los cambios de interfaz DEBEN limitarse al espacio de trabajo "BIM Simple"; los demás
-  espacios de trabajo quedan intactos. Todo lo que se reemplace DEBE restaurarse al desactivar
-  la extensión.
 
-**Por qué:** así BIM Simple convive con Bonsai, el usuario puede pasar a la interfaz completa
-cuando la necesite, y desactivar la extensión deja Blender como estaba.
+**Por qué:** el usuario quiere un programa propio, sin la interfaz de Blender, que aproveche su
+motor gráfico y Bonsai en lugar de reescribirlos. Usar copias sin modificar permite
+actualizarlas reemplazando solo la copia incluida.
 
 ### IV. API verificada, no inventada (NO NEGOCIABLE)
 
@@ -76,12 +79,13 @@ confirmar cada avance sin leer el código.
 
 ## Restricciones técnicas
 
-- Blender 5.2 LTS (Python 3.13) en Windows 11.
+- El programa incluye Blender 5.2 LTS (Python 3.13) y funciona en Windows 11.
 - Bonsai 0.9.0, paquete `py313` (el paquete `py311` se instala pero no carga en Blender 5.2).
   Actualizar Blender o Bonsai requiere permiso del usuario y correr la prueba automática antes.
 - Proyectos nuevos en IFC4, con unidades métricas en metros.
-- Se entrega como extensión de Blender con `blender_manifest.toml`, licencia
-  GPL-3.0-or-later (igual que Bonsai).
+- Se entrega como programa para Windows que incluye Blender, Bonsai y la extensión BIM Simple
+  (con `blender_manifest.toml`). Licencia GPL-3.0-or-later, igual que Blender y Bonsai; el
+  paquete incluye las licencias de ambos.
 - NO se agregan dependencias (pip u otras) sin permiso del usuario.
 - Solo se hace lo pedido: nada de funciones, abstracciones ni archivos extra. Cada función
   nueva entra por su propia especificación (`/speckit-specify`).
@@ -97,7 +101,8 @@ confirmar cada avance sin leer el código.
   - instalar o actualizar cualquier software o paquete;
   - borrar cualquier archivo, incluidas las carpetas `__pycache__`;
   - cambiar la arquitectura descrita en el Principio III;
-  - enlazar la extensión en la carpeta de extensiones de Blender por primera vez;
+  - descargar Blender o Bonsai para la copia del programa;
+  - crear accesos directos en el escritorio o en el menú Inicio;
   - abrir ventanas de Blender (las pruebas corren en segundo plano).
 - Si el mismo error sigue después de 3 correcciones, el trabajo se DETIENE y se muestra el
   error junto con lo que se probó.
@@ -117,4 +122,4 @@ confirmar cada avance sin leer el código.
   anterior (`PLAN.md`, etiqueta git `mvp-original`) es punto de partida, pero cada llamada se
   vuelve a verificar según el Principio IV.
 
-**Versión**: 1.0.0 | **Ratificada**: 2026-10-11 | **Última enmienda**: 2026-10-11
+**Versión**: 2.0.0 | **Ratificada**: 2026-10-11 | **Última enmienda**: 2026-10-11
