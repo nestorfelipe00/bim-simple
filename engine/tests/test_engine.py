@@ -221,3 +221,46 @@ def test_tiempo_con_diez_pisos(project):
         inicio = time.perf_counter()
         execute(project, cmd, args)
         assert (time.perf_counter() - inicio) * 1000 < 50, cmd
+
+
+# ---------- Historia 3: trabajar en un piso ----------
+def test_activar_no_cambia_el_ifc(project, fixtures):
+    _abrir(project, fixtures["con_elementos"])
+    pisos = _pisos(project)
+    assert project.state()["active_storey_id"] == pisos["Planta Baja"]["id"]
+    estado = execute(project, "activate_storey", {"id": pisos["Piso 1"]["id"]})["state"]
+    assert estado["active_storey_id"] == pisos["Piso 1"]["id"]
+    assert estado["dirty"] is False and estado["can_undo"] is False and estado["can_redo"] is False
+    with pytest.raises(EngineError, match="^El piso indicado ya no existe.$"):
+        execute(project, "activate_storey", {"id": 999999})
+    assert project.state()["active_storey_id"] == pisos["Piso 1"]["id"]
+
+
+def test_siempre_hay_un_piso_activo(project, fixtures):
+    _abrir(project, fixtures["con_elementos"])
+    pisos = _pisos(project)
+    ids = {s["id"] for s in project.state()["storeys"]}
+    # borrar el activo: pasa al de abajo; si era el más bajo, al de arriba
+    execute(project, "activate_storey", {"id": pisos["Planta Baja"]["id"]})
+    estado = execute(project, "delete_storey", {"id": pisos["Planta Baja"]["id"]})["state"]
+    assert estado["active_storey_id"] == pisos["Piso 1"]["id"]
+    # deshacer un piso nuevo que estaba activo: pasa al de cota más cercana a 0,00
+    nuevo = execute(project, "add_storey_above", {})["storey_id"]
+    execute(project, "activate_storey", {"id": nuevo})
+    estado = execute(project, "undo", {})["state"]
+    assert estado["active_storey_id"] in {s["id"] for s in estado["storeys"]}
+    assert estado["active_storey_id"] == pisos["Piso 1"]["id"]
+    # deshacer el borrado: el activo sigue existiendo
+    estado = execute(project, "undo", {})["state"]
+    assert {s["id"] for s in estado["storeys"]} == ids
+    assert estado["active_storey_id"] in ids
+
+
+def test_mallas_con_su_piso(project, fixtures):
+    _abrir(project, fixtures["con_elementos"])
+    pisos = _pisos(project)
+    resultado = execute(project, "meshes", {})
+    muros = {m["id"]: m for m in resultado["meshes"] if m["ifc_class"] == "IfcWall"}
+    esperado = {m.id(): pisos[m.Name.replace("Muro ", "")]["id"] for m in project.file.by_type("IfcWall")}
+    assert {i: m["storey_id"] for i, m in muros.items()} == esperado
+    assert resultado["failures"] == []

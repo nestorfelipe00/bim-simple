@@ -18,6 +18,7 @@ export class Viewports {
     this.groups = new Map(); // piso (id o "none") → THREE.Group
     this.activeStorey = null;
     this.lastPlanVisible = [];
+    this.last3dVisible = [];
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -131,7 +132,11 @@ export class Viewports {
     this.renderer.render(this.scene, this.planCamera);
 
     // 3D: todo el edificio.
-    for (const group of this.groups.values()) group.visible = true;
+    this.last3dVisible = [];
+    for (const [key, group] of this.groups) {
+      group.visible = true;
+      if (group.children.length) this.last3dVisible.push(key);
+    }
     for (const mesh of this.meshes()) mesh.material = mesh.userData.material;
     this.camera3d.aspect = (width - half) / height;
     this.camera3d.updateProjectionMatrix();
@@ -170,5 +175,10 @@ export class Viewports {
   // Para la prueba del programa: pisos visibles en la última pasada de la planta.
   debugVisiblePlanStoreys() {
     return [...this.lastPlanVisible];
+  }
+
+  // Para la prueba del programa: pisos con elementos dibujados en la última pasada del 3D.
+  debugVisible3dStoreys() {
+    return [...this.last3dVisible];
   }
 }

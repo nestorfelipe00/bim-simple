@@ -73,11 +73,11 @@ async function environment(t) {
 }
 
 // ---------- Historia 1: abrir BIM Simple, empezar un proyecto y guardarlo ----------
-async function waitFor(condition, timeoutMs = 10000) {
+async function waitFor(condition, timeoutMs = 10000, intervalMs = 100) {
   const started = performance.now();
   while (performance.now() - started < timeoutMs) {
     if (condition()) return true;
-    await sleep(100);
+    await sleep(intervalMs);
   }
   return false;
 }
@@ -163,4 +163,57 @@ addSection(async function historia2(t) {
     last && last.message === "¿Guardar cambios antes de cerrar?" && last.answer === "Cancelar" && JSON.stringify(t.tableRows()) === rows, last);
   await t.capture("h2");
   t.result.closeWithChanges = true; // el último paso de la prueba cierra la ventana con cambios (lo registra el proceso principal)
+});
+
+// ---------- Historia 3: trabajar en un piso ----------
+function rowByName(name) {
+  return [...document.querySelectorAll("#storeys tr")].find((tr) => tr.firstChild.textContent.replace("● ", "") === name);
+}
+
+addSection(async function historia3(t) {
+  const S = "Historia 3";
+  const fixtures = await bim.test.fixtures();
+  t.step(S, "IFC de prueba generados con engine/tests/make_fixtures.py", fixtures && fixtures.ok, fixtures);
+  // Abrir con_elementos.ifc (3 pisos con un muro cada uno); hay cambios de la Historia 2: «No guardar».
+  await bim.test.answerDialogs(["No guardar", `${fixtures.folder}\\con_elementos.ifc`]);
+  const opened = await t.app.handleAction("open");
+  const ids = Object.fromEntries(t.app.getState().storeys.map((s) => [s.name, s.id]));
+  t.step(S, "Abrir «con_elementos.ifc»: 3 pisos y activa «Planta Baja»",
+    opened && opened.ok && JSON.stringify(t.tableRows().map((r) => r[0])) === JSON.stringify(["Piso 2", "Piso 1", "● Planta Baja"]), t.tableRows());
+  t.app.viewports.draw();
+  const all = [ids["Planta Baja"], ids["Piso 1"], ids["Piso 2"]].sort();
+  t.step(S, "El 3D muestra los elementos de los 3 pisos (FR-002)", JSON.stringify(t.app.viewports.debugVisible3dStoreys().sort()) === JSON.stringify(all), t.app.viewports.debugVisible3dStoreys());
+
+  // Doble clic en "Piso 1" (FR-020): pasa a ser el único activo y la planta muestra solo sus elementos.
+  await t.navigatorAction(S, "Doble clic en «Piso 1» lo activa", async () => {
+    rowByName("Piso 1").dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    const done = await waitFor(() => t.app.getState().active_storey_id === ids["Piso 1"] && rowByName("Piso 1").classList.contains("active"), 2000, 2);
+    return { ok: done };
+  }, (r) => r.ok);
+  const plan = t.app.viewports.debugVisiblePlanStoreys();
+  t.step(S, "Un solo piso activo (FR-021) y la planta muestra solo «Piso 1» (FR-022)",
+    t.tableRows().filter((r) => r[0].startsWith("● ")).length === 1 && JSON.stringify(plan) === JSON.stringify([ids["Piso 1"]]), { plan, rows: t.tableRows() });
+  t.step(S, "Etiqueta de la planta: «Planta — Piso 1»", document.getElementById("plan-label").textContent === "Planta — Piso 1", document.getElementById("plan-label").textContent);
+  t.step(S, "Activar no marca cambios sin guardar", !t.app.getState().dirty && !(await bim.test.windowTitle()).startsWith("* "), await bim.test.windowTitle());
+  t.step(S, "El 3D sigue mostrando los 3 pisos", JSON.stringify(t.app.viewports.debugVisible3dStoreys().sort()) === JSON.stringify(all), t.app.viewports.debugVisible3dStoreys());
+
+  // Borrar un piso con elementos (FR-017): primero «Cancelar», después «Borrar».
+  rowByName("Piso 2").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  const rows = JSON.stringify(t.tableRows());
+  await bim.test.answerDialogs(["Cancelar"]);
+  await t.app.handleAction("delete");
+  let log = await bim.test.dialogLog();
+  let last = log.dialogs[log.dialogs.length - 1];
+  t.step(S, "Borrar «Piso 2» con 1 elemento: pregunta con el texto exacto y «Cancelar» no borra nada",
+    last && last.message === "El piso «Piso 2» tiene 1 elemento. Se borrarán junto con el piso." && last.answer === "Cancelar" && JSON.stringify(t.tableRows()) === rows, last);
+  await bim.test.answerDialogs(["Borrar"]);
+  const deleted = await t.app.handleAction("delete");
+  log = await bim.test.dialogLog();
+  last = log.dialogs[log.dialogs.length - 1];
+  t.step(S, "Con «Borrar»: el piso y su muro desaparecen de la tabla y de la escena",
+    deleted && deleted.ok && last.answer === "Borrar" && !rowByName("Piso 2") && !t.app.viewports.debugVisible3dStoreys().includes(ids["Piso 2"]),
+    { rows: t.tableRows(), view3d: t.app.viewports.debugVisible3dStoreys() });
+
+  await t.app.handleAction("fit"); // botón Encuadrar
+  await t.capture("h3");
 });

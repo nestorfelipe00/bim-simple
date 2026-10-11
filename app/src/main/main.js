@@ -1,6 +1,7 @@
 // Proceso principal: ventana, título, menús, diálogos de Windows, pregunta al cerrar y puente con el motor.
 // Contratos: specs/001-espacio-trabajo-pisos/contracts/ui.md y programa.md.
 const { app, BrowserWindow, Menu, dialog, ipcMain } = require("electron");
+const { spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { Engine } = require("./engine");
@@ -269,6 +270,7 @@ if (TEST) {
   );
   ipcMain.handle("test-kill-engine", () => engine.killForTest());
   ipcMain.handle("test-output-dir", () => TEST_OUTPUT);
+  ipcMain.handle("test-fixtures", () => testFixtures);
   // Termina la prueba. Si se pide, el último paso es cerrar la ventana con cambios: lo registra el proceso principal,
   // porque la página desaparece al cerrarse.
   ipcMain.handle("test-finish", async (_event, result) => {
@@ -291,7 +293,16 @@ if (TEST) {
   });
 }
 
+// IFC de prueba (engine/tests/make_fixtures.py), generados antes de abrir la ventana.
+let testFixtures = null;
+function makeTestFixtures() {
+  const folder = path.join(TEST_OUTPUT, "fixtures");
+  const run = spawnSync(pythonExe, ["-m", "tests.make_fixtures", folder], { cwd: path.join(APP_DIR, "..", "engine"), encoding: "utf8" });
+  testFixtures = { folder, ok: run.status === 0, output: `${run.stdout || ""}${run.stderr || ""}`.slice(-2000) };
+}
+
 app.whenReady().then(() => {
+  if (TEST) makeTestFixtures();
   engine = new Engine({ pythonExe, logFile: engineLogFile() });
   engine.on("crashed", () => {
     state = { has_project: false, dirty: false, path: "", can_undo: false, can_redo: false };

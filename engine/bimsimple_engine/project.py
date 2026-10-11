@@ -1,5 +1,7 @@
 """Estado del proyecto abierto (archivo IFC, ruta, cambios sin guardar, piso activo) y órdenes de proyecto."""
 
+import os
+
 import ifcopenshell
 import ifcopenshell.api.aggregate
 import ifcopenshell.api.context
@@ -101,6 +103,19 @@ def new_project(project):
         project.file = previous  # si algo falla, sigue abierto el proyecto anterior
         raise
     project.replace_file(f, "")
+    return {"state": project.state()}
+
+
+def open_project(project, path):
+    """Abre un IFC (research R5): primero se valida; si no sirve, el proyecto abierto no cambia (FR-011)."""
+    name = os.path.basename(path)
+    try:
+        f = ifcopenshell.open(path)
+    except Exception:
+        raise EngineError(f"No se pudo abrir «{name}»: no es un archivo IFC válido.") from None
+    if not f.by_type("IfcProject"):
+        raise EngineError(f"No se pudo abrir «{name}»: no contiene un proyecto IFC.")
+    project.replace_file(f, path)
     return {"state": project.state()}
 
 

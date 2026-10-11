@@ -15,6 +15,7 @@ COMMANDS = {
     "state": _state,
     "meshes": _meshes,
     "new_project": lambda project: project_commands.new_project(project),
+    "open_project": lambda project, path: project_commands.open_project(project, path),
     "save_project": lambda project, path=None: project_commands.save_project(project, path),
     "validate_file": lambda project, path: project_commands.validate_file(project, path),
     "undo": lambda project: project_commands.undo(project),
@@ -25,6 +26,7 @@ COMMANDS = {
         project, id, name, elevation, height),
     "count_storey_elements": lambda project, id: storeys.count_storey_elements(project, id),
     "delete_storey": lambda project, id: storeys.delete_storey(project, id),
+    "activate_storey": lambda project, id: storeys.activate_storey(project, id),
 }
 
 

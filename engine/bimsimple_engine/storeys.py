@@ -210,6 +210,14 @@ def edit_storey(project, id, name=None, elevation=None, height=None):
     return {"state": project.state(), "changed_ids": changed}
 
 
+def activate_storey(project, id):
+    """Activar no cambia el IFC ni marca cambios (data-model.md §3): solo el ajuste de la interfaz."""
+    project.require_project()
+    _row(project, id)
+    project.active_storey_id = id
+    return {"state": project.state()}
+
+
 def count_storey_elements(project, id):
     project.require_project()
     rows, i = _row(project, id)

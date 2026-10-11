@@ -385,22 +385,22 @@ sus elementos y el 3D muestra todos.
 
 ### Pruebas de la Historia 3
 
-- [ ] T037 [US3] En `engine/tests/test_engine.py`:
+- [X] T037 [US3] En `engine/tests/test_engine.py`:
   - `activate_storey` cambia `active_storey_id` sin tocar `dirty` ni `can_undo`;
   - siempre hay exactamente uno activo (FR-021): después de borrar el activo y después de deshacer;
   - `meshes()` de `con_elementos` devuelve cada muro con su `storey_id`.
 
 ### Implementación de la Historia 3
 
-- [ ] T038 [US3] En `engine/bimsimple_engine/storeys.py`, la orden `activate_storey(id)`: «Activar no cambia el IFC
+- [X] T038 [US3] En `engine/bimsimple_engine/storeys.py`, la orden `activate_storey(id)`: «Activar no cambia el IFC
   ni marca cambios»; el piso tiene que existir. Registrarla en `commands.py`.
-- [ ] T039 [US3] En `app/src/renderer/storey-panel.js`, el **doble clic** en una fila manda `activate_storey`
+- [X] T039 [US3] En `app/src/renderer/storey-panel.js`, el **doble clic** en una fila manda `activate_storey`
   (FR-020). Debajo de la tabla, la ayuda "Doble clic en un piso para activarlo.".
-- [ ] T040 [US3] En `app/src/renderer/viewports.js` y `app.js`:
+- [X] T040 [US3] En `app/src/renderer/viewports.js` y `app.js`:
   - al cambiar el piso activo, `setActiveStorey(id)` y la etiqueta "Planta — <piso>";
   - el botón **Encuadrar** llama a `fit()`;
   - la primera vez que aparecen elementos, encuadre automático.
-- [ ] T041 [US3] En `app/test/window-test.js`, sección "Historia 3":
+- [X] T041 [US3] En `app/test/window-test.js`, sección "Historia 3":
   - antes de la ventana, generar los IFC de prueba con
     `runtime\python\python.exe -m tests.make_fixtures app\test-output\fixtures` (desde `engine/`);
   - abrir `con_elementos.ifc`;
@@ -411,7 +411,7 @@ sus elementos y el 3D muestra todos.
     cola → se registró «El piso «Piso 2» tiene 1 elemento. Se borrarán junto con el piso.» y no se borró nada;
     repetir con "Borrar" → el piso y su muro desaparecen de la tabla y de la escena;
   - captura `h3`.
-- [ ] T042 [US3] Ejecutar las dos pruebas automáticas y mostrar la salida real. Hacer commit.
+- [X] T042 [US3] Ejecutar las dos pruebas automáticas y mostrar la salida real. Hacer commit.
 
 **Punto de control**: las Historias 1 a 3 funcionan.
 
