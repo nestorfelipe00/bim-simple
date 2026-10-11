@@ -494,10 +494,15 @@ sus elementos y el 3D muestra todos.
   - que arranca, con permiso para abrir la ventana (SC-007 cronometrado);
   - que se desinstala desde "Agregar o quitar programas" sin dejar `%LOCALAPPDATA%\Programs\…`, ni
     `%APPDATA%\BIM Simple`, ni `%LOCALAPPDATA%\bim-simple-updater` (SC-005).
-- [ ] T052 ⛔ PERMISO: pedir permiso para abrir BIM Simple con ventana y hacer con el usuario la parte B de
+- [X] T052 ⛔ PERMISO: pedir permiso para abrir BIM Simple con ventana y hacer con el usuario la parte B de
   [quickstart.md](quickstart.md) (B1 a B5): arranque, Acerca de, proyecto, el tiempo de SC-001, los clics de SC-006,
   pisos, navegación, deshacer, salir, y abrir el IFC en otro programa BIM (SC-003). Anotar los resultados en el mensaje de commit de T057 y corregir lo que falle, con su
   prueba automática.
+
+  **Hecho (2026-10-11)**: con permiso ("Haz la prueba", "ejecutalo") se abrió la ventana con `npm --prefix app start`.
+  El usuario no quiso ceder el control de la pantalla e hizo él la prueba con la guía de 6 pasos (arranque, proyecto
+  y guardar, pisos, abrir `con_elementos.ifc`, navegación y salir). Resultado informado por el usuario: "funciona
+  bien". No hubo nada que corregir.
 - [X] T053 Anotar en `specs/001-espacio-trabajo-pisos/research.md` (R9) los pendientes **antes de vender**:
   - la prueba en una PC limpia (Windows Sandbox o una máquina virtual; activar Windows Sandbox lo hace el usuario,
     porque pide administrador) para confirmar `MSVCP140.dll`;
@@ -524,7 +529,7 @@ sus elementos y el 3D muestra todos.
   Principio VI), "Acerca de" (con su paso en la prueba del programa), `LEEME-licencias.txt` y
   `licencias/bim-simple/GPL-3.0.txt`, `package.json`, README y research R11. Subir los commits sigue pidiendo
   permiso.
-- [ ] T057 Marcar la especificación como implementada (`**Estado**: Implementada` en [spec.md](spec.md)), comprobar
+- [X] T057 Marcar la especificación como implementada (`**Estado**: Implementada` en [spec.md](spec.md)), comprobar
   que todas las tareas de este archivo están marcadas y hacer el commit final con los resultados de T052.
 
 ---

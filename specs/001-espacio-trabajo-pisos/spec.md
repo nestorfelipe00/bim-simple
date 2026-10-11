@@ -4,7 +4,7 @@
 
 **Creada**: 2026-10-11 · **Revisada**: 2026-10-11 (constitución v3.0.0: programa propio sin Blender)
 
-**Estado**: Borrador
+**Estado**: Implementada (2026-10-11)
 
 **Pedido**: "Espacio de trabajo y navegador de pisos de BIM Simple (primera de tres funciones;
 Muro/Info Box y Losa/Columna van en especificaciones aparte). Pantalla partida en planta 2D del
