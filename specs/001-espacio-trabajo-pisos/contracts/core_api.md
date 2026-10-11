@@ -1,5 +1,8 @@
 # Contrato: protocolo del motor BIM
 
+> El archivo se llama `core_api.md` por su versión anterior. Hoy describe el protocolo del **motor**
+> (`engine/`).
+
 El motor es un proceso de Python (`python -m bimsimple_engine`) que usa IfcOpenShell. La interfaz
 no le habla directamente: el proceso principal de Electron lo lanza, le escribe órdenes por
 **stdin** y lee las respuestas por **stdout**, una línea JSON por mensaje (UTF-8, sin BOM). Los

@@ -23,13 +23,27 @@ Todos los textos visibles están en español (FR-024). Los identificadores van e
 | Archivo | Salir | Ctrl+Q | Igual que cerrar la ventana |
 | Edición | Deshacer | Ctrl+Z | `undo` (desactivado si `can_undo` es falso) |
 | Edición | Rehacer | Ctrl+Y | `redo` (desactivado si `can_redo` es falso) |
+| Ayuda | Acerca de BIM Simple | — | Diálogo de Windows "Acerca de BIM Simple" (ver abajo) |
 
-No hay otros menús. No se muestran las herramientas de desarrollo de Electron.
+No hay otros menús. Las herramientas de desarrollo de Electron no están a la vista: el menú propio
+reemplaza al de Electron y no las incluye.
+
+**"Acerca de BIM Simple"** (`dialog.showMessageBox`, título "Acerca de BIM Simple", botón "Cerrar"),
+con este texto exacto:
+
+> BIM Simple 0.1.0
+>
+> Usa estas librerías, cada una con su licencia:
+> • IfcOpenShell 0.9.0 — LGPL-3.0. Código fuente: https://github.com/IfcOpenShell/IfcOpenShell
+> • Electron 44.4.5, Three.js 0.186.1 y camera-controls 3.1.2 — MIT
+> • Python 3.14.7 — PSF
+>
+> Los textos completos de las licencias están en la carpeta «licencias» del programa.
 
 ## Pantalla
 
 ```text
-┌ Archivo  Edición ───────────────────────────────────────────────────────────────┐
+┌ Archivo  Edición  Ayuda ────────────────────────────────────────────────────────┐
 ├───────────────────────────────┬───────────────────────────────┬─────────────────┤
 │ Planta — Planta Baja          │ Vista 3D                      │ BIM Simple      │
 │ (piso activo, desde arriba)   │ (todo el edificio)            │ Casa.ifc •      │
@@ -57,7 +71,7 @@ No hay otros menús. No se muestran las herramientas de desarrollo de Electron.
    - **Editar piso…**: diálogo con Nombre, Cota (m) y Altura (m) del piso seleccionado; Aceptar
      manda un solo `edit_storey`;
    - **Borrar piso**: si `count_storey_elements > 0`, confirmación «El piso «X» tiene N
-     elementos. Se borrarán junto con el piso.» con [Borrar] / [Cancelar];
+     elementos. Se borrarán junto con el piso.» (con N = 1: «tiene 1 elemento») con [Borrar] / [Cancelar];
    - **Encuadrar**.
 
    Se desactivan cuando no aplican: Borrar con un solo piso, Agregar sin edificio, Editar o Borrar

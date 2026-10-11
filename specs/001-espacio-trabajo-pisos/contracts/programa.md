@@ -11,7 +11,7 @@ la lista manual comprueban lo que este contrato fija.
 | Instalación | **Por usuario, sin administrador** (`perMachine: false`), en un paso (`oneClick: true`) |
 | Destino | `%LOCALAPPDATA%\Programs\<nombre del paquete>\` |
 | Accesos directos | "BIM Simple" en el Escritorio y en el menú Inicio (los crea el instalador) |
-| Desinstalar | Desde "Agregar o quitar programas". No deja nada fuera de los archivos del usuario (SC-005), incluida la copia `%LOCALAPPDATA%\bim-simple-updater` (research R9, riesgo 3) |
+| Desinstalar | Desde "Agregar o quitar programas". No deja nada fuera de los archivos del usuario (SC-005): ni la carpeta del programa, ni `%APPDATA%\BIM Simple` (con `deleteAppDataOnUninstall: true`), ni la copia `%LOCALAPPDATA%\bim-simple-updater` (research R9, riesgo 3) |
 | Identidad | `appId` y AppUserModelID = `BIMSimple.BIMSimple`. No se cambia nunca |
 | Icono | `app/build/icon.ico` con 16, 24, 32, 48 y 256 px |
 
@@ -32,7 +32,7 @@ la lista manual comprueban lo que este contrato fija.
 
 - **Proyectos**: donde el usuario los guarde (`.ifc`).
 - **Registro del motor** (stderr): `%APPDATA%\BIM Simple\logs\engine.log`, que es la carpeta de
-  datos de Electron.
+  datos de Electron. Se borra al desinstalar.
 - No se escribe en el registro de Windows salvo lo que hace el instalador (entrada de desinstalación).
 - No se modifica ninguna otra instalación: Blender, Python del sistema y similares.
 
@@ -46,8 +46,9 @@ la lista manual comprueban lo que este contrato fija.
 
 ## Licencias en el programa (Principio VI)
 
-- La ventana **Acerca de** (menú Ayuda, función futura; mientras tanto, la carpeta `licencias\`)
-  indica que el programa usa IfcOpenShell bajo LGPL-3.0 y cómo obtener su código fuente.
+- **"Ayuda > Acerca de BIM Simple"** (texto exacto en [ui.md](ui.md)) indica que el programa usa
+  IfcOpenShell bajo LGPL-3.0, dónde está su código fuente y que los textos de las licencias están en
+  `licencias\`.
 - IfcOpenShell se distribuye sin modificar, en su propia carpeta y reemplazable.
 - Antes de la **primera venta**, el programa NO se distribuye sin:
   1. aclarar CGAL dentro de los binarios de IfcOpenShell;

@@ -42,7 +42,7 @@ pruebas automáticas en verde y un commit.
   su licencia (Principio VI).
 - **Idiomas**: textos visibles en español, exactamente como en los contratos. Código, órdenes y campos en inglés.
 - **Ventanas**: las pruebas corren con la ventana oculta. Abrir la ventana visible es un ⛔ PERMISO.
-- **Commits**: `git commit -F <archivo>`. **No subir nada a GitHub** (`git push`) hasta resolver T055.
+- **Commits**: `git commit -F <archivo>`. **No subir nada a GitHub** (`git push`) hasta resolver T056.
 - **Errores**: si el mismo error sigue después de 3 correcciones, detenerse y mostrarlo junto con lo que se probó.
 
 ---
@@ -66,7 +66,7 @@ pruebas automáticas en verde y un commit.
   - `devDependencies` `"electron": "44.4.5"`;
   - `scripts`: `"start": "electron ."` y `"test": "electron . --test"`.
 
-  Sin `^` ni `~` en las versiones. electron-builder se agrega en T049.
+  Sin `^` ni `~` en las versiones. electron-builder se agrega en T050.
 - [ ] T004 [P] Crear `tools/make_icon.py`, solo con la biblioteca estándar, a partir de
   `specs/001-espacio-trabajo-pisos/investigacion/scripts/empaquetado_make_ico.py`.
   - Genera `app/build/icon.ico` con 16, 24, 32, 48 y 256 px (research R9): un edificio simple de color.
@@ -79,8 +79,9 @@ pruebas automáticas en verde y un commit.
       verificando el SHA-256 `d297e5ff019966817ad8502465176139f2d3d840fa4ed84b13bed399a6ab1f15` (si no coincide,
       se detiene) e instalando `engine/requirements.txt` con
       `python -m pip install --only-binary=:all: --target runtime/python/Lib/site-packages -r engine/requirements.txt`.
-  - En los dos casos escribe `runtime/python/python314._pth` con las líneas `python314.zip`, `.`, `Lib\site-packages`
-    y `..\..\engine`, para que `python -m bimsimple_engine` funcione en desarrollo.
+  - En los dos casos escribe `runtime/python/python314._pth` con las líneas `python314.zip`, `.`, `Lib\site-packages`,
+    `..\..\engine` (desarrollo) y `..\engine` (programa instalado). El Python embebido ignora `PYTHONPATH` y la
+    carpeta actual (research R9, ✅); una ruta que no existe se ignora.
   - Copia `C:\Windows\System32\msvcp140.dll` a `runtime/python/`, junto a los demás DLL de Visual C++ (research R9,
     riesgo 1).
   - **`app/node_modules`**: `npm --prefix app install --no-audit --no-fund` y después
@@ -134,7 +135,8 @@ pruebas automáticas en verde y un commit.
       `ifcopenshell.api.geometry.create_2pt_wall` + `assign_representation` + `spatial.assign_container`, y un
       `IfcDoor` sin editar en Planta Baja.
   - el módulo `engine/tests/make_fixtures.py` (`python -m tests.make_fixtures <carpeta>`), que escribe los mismos
-    archivos para la prueba del programa.
+    archivos para la prueba del programa; y `engine/tests/__init__.py`, para que `tests` se pueda importar como
+    paquete.
 - [ ] T011 Crear `engine/tests/test_engine.py` con las pruebas del protocolo, usando `run_engine`:
   - el mensaje `id 0` con `ready`;
   - el texto exacto de una orden desconocida;
@@ -152,7 +154,7 @@ pruebas automáticas en verde y un commit.
   - `stop()` para el cierre normal.
 - [ ] T013 [P] Crear `app/src/preload.js` con `contextBridge.exposeInMainWorld("bim", …)`:
   - órdenes: `engine(cmd, args)`;
-  - diálogos: `openIfc()`, `saveIfcAs()`, `confirmDelete(nombre, n)`;
+  - diálogos: `openIfc()`, `saveIfcAs()`, `confirmDelete(nombre, n)`, `askSaveChanges()`;
   - avisos y menú: `onMenu(fn)`, `onNotice(fn)`, `onState(fn)`;
   - para la prueba: `capture(nombre)` y `finishTest(resultado)`.
 
@@ -162,15 +164,21 @@ pruebas automáticas en verde y un commit.
   - ventana 1400 × 860 con `contextIsolation`, `nodeIntegration: false`, `sandbox: true` e icono
     `app/build/icon.ico`; se cancela `page-title-updated`;
   - **título** según FR-004 / [ui.md](contracts/ui.md), a partir del `State` de cada respuesta;
-  - **menú** "Archivo" y "Edición" con los textos y atajos exactos de [ui.md](contracts/ui.md); Deshacer y Rehacer
-    activos según `can_undo` / `can_redo`;
+  - **menú** "Archivo", "Edición" y "Ayuda" con los textos y atajos exactos de [ui.md](contracts/ui.md); Deshacer y
+    Rehacer activos según `can_undo` / `can_redo`. El menú propio reemplaza al de Electron, así que no hay
+    herramientas de desarrollo a la vista;
   - **cierre**: `close` con `preventDefault` si `dirty`, y `dialog.showMessageBox` con el título "BIM Simple", el
     mensaje «¿Guardar cambios antes de cerrar?», el detalle "Si no los guardas, se perderán." y los botones
-    Guardar / No guardar / Cancelar;
-  - **modo `--test`**: ventana oculta con `backgroundThrottling: false`, la consola de la página en
-    `app/test-output/consola.txt`, capturas con `webContents.capturePage()`, y al final `resultado.json` y
-    `app.exit(código)`. En este modo, el diálogo de cierre se reemplaza por uno que registra la pregunta y responde
-    "No guardar".
+    Guardar / No guardar / Cancelar. La misma pregunta (`askSaveChanges`) la usan Nuevo proyecto y Abrir IFC…;
+  - **modo `--test`**:
+    - ventana oculta con `backgroundThrottling: false`;
+    - la consola de la página en `app/test-output/consola.txt`;
+    - capturas con `webContents.capturePage()`;
+    - al final, `resultado.json` y `app.exit(código)`.
+
+    En este modo, **todos** los diálogos nativos (pregunta de guardar, confirmar borrado, Acerca de) se reemplazan
+    por uno que registra el título y el mensaje en `resultado.json` y responde lo que diga una **cola de respuestas**
+    que arma el arnés (por defecto, "No guardar" o "Borrar").
 - [ ] T015 [P] Crear `app/src/renderer/index.html` y `styles.css` con la pantalla de [ui.md](contracts/ui.md):
   - planta | 3D | panel de ~290 px;
   - CSP `default-src 'self'`;
@@ -199,8 +207,13 @@ pruebas automáticas en verde y un commit.
   - pasos con nombre, `ok`, `ms` y error;
   - una captura de calentamiento antes de la primera, porque la ventana oculta devuelve un cuadro viejo;
   - `resultado.json` con los pasos, las capturas y `RESULTADO: TODO OK` o `N FALLAS`, que termina con código 1;
-  - la sección "Entorno": el motor listo en menos de 10 s (SC-007) y los textos de los menús según
-    [ui.md](contracts/ui.md).
+  - **regla SC-004**: un paso del navegador de pisos (agregar, editar, borrar, activar, deshacer, rehacer) que tarde
+    más de 200 ms, desde la orden hasta el redibujo, cuenta como falla;
+  - la sección "Entorno":
+    - el motor listo en menos de 10 s (SC-007);
+    - los textos de los menús según [ui.md](contracts/ui.md);
+    - al arrancar no hay proyecto, la tabla está vacía con "No hay ningún proyecto abierto" y no hay mallas en
+      la escena (FR-006).
 - [ ] T020 Ejecutar `runtime\python\python.exe -m pytest engine\tests -q` y `npm --prefix app test`. Mostrar la
   salida real: la base pasa. Hacer commit de las fases 1 y 2.
 
@@ -262,14 +275,21 @@ pasa la validación IFC4.
   - **Guardar IFC como…**: `dialog.showSaveDialog` con el filtro "Modelo IFC" (`*.ifc`) y `save_project(path)`;
   - **Salir**: igual que la X;
   - después de guardar, `validator.js`; actualizar el título.
-- [ ] T027 [US1] En `app/test/window-test.js`, sección "Historia 1":
+- [ ] T027 [US1] En `app/src/main/main.js`, el menú **Ayuda > Acerca de BIM Simple**: `dialog.showMessageBox` con el
+  título "Acerca de BIM Simple", el botón "Cerrar" y el **texto exacto** de [ui.md](contracts/ui.md) (versión,
+  IfcOpenShell 0.9.0 bajo LGPL-3.0 con el enlace https://github.com/IfcOpenShell/IfcOpenShell, Electron, Three.js y
+  camera-controls bajo MIT, Python bajo PSF, y la carpeta «licencias»). La versión sale de `app.getVersion()`.
+  Es el aviso de licencias que exige la constitución (Principio VI) y FR-003.
+- [ ] T028 [US1] En `app/test/window-test.js`, sección "Historia 1":
   - Nuevo proyecto → la tabla muestra "● Planta Baja | 0,00 | 3,00" y el título es "Proyecto sin guardar — BIM Simple";
   - guardar como en `app/test-output/prueba.ifc` → el título es "prueba.ifc — BIM Simple" y aparece el mensaje de
     validación con 0 errores;
-  - provocar un cambio y cerrar → se registró «¿Guardar cambios antes de cerrar?» y la ventana se cerró después de
-    "No guardar";
+  - Ayuda > Acerca de → el diálogo registrado contiene "LGPL-3.0" y el enlace de IfcOpenShell;
   - captura `h1`.
-- [ ] T028 [US1] Ejecutar las dos pruebas automáticas y mostrar la salida real; todas pasan. Hacer commit.
+
+  La pregunta al cerrar o al hacer Nuevo con cambios se prueba en la Historia 2 (T035), porque en la Historia 1
+  todavía no hay ninguna acción que deje cambios sin guardar.
+- [ ] T029 [US1] Ejecutar las dos pruebas automáticas y mostrar la salida real; todas pasan. Hacer commit.
 
 **Punto de control**: la Historia 1 funciona y se prueba sola.
 
@@ -284,7 +304,7 @@ reabrir: mismos nombres, cotas y alturas.
 
 ### Pruebas de la Historia 2
 
-- [ ] T029 [US2] En `engine/tests/test_engine.py`, agregar las pruebas de la Historia 2:
+- [ ] T030 [US2] En `engine/tests/test_engine.py`, agregar las pruebas de la Historia 2:
   - **Escenarios** 1 a 5 de spec.md, con los valores exactos: "Piso 1" a 3,00 y "Sótano 1" a −3,00; altura de
     Planta Baja 3,50 → Piso 1 a 3,50 y Piso 2 a 6,50.
   - **Con `con_elementos`**:
@@ -301,7 +321,7 @@ reabrir: mismos nombres, cotas y alturas.
 
 ### Implementación de la Historia 2
 
-- [ ] T030 [US2] En `engine/bimsimple_engine/storeys.py`, implementar cada orden en **una** transacción, con las
+- [ ] T031 [US2] En `engine/bimsimple_engine/storeys.py`, implementar cada orden en **una** transacción, con las
   recetas de research R4 (`verif_pisos.py`) y estas reglas de data-model §3:
   - **`add_storey_above`**: «Cota = cota del más alto + su altura. Altura = la del más alto. Nombre "Piso N"
     (N = pisos con cota > 0 contando el nuevo).»
@@ -322,12 +342,12 @@ reabrir: mismos nombres, cotas y alturas.
     después del piso; activa el inferior o, si no hay, el superior; devuelve `deleted_ids`.
 
   Textos de error exactos de [core_api.md](contracts/core_api.md).
-- [ ] T031 [US2] En `engine/bimsimple_engine/project.py`, las órdenes `undo` y `redo` (`file.undo()` /
+- [ ] T032 [US2] En `engine/bimsimple_engine/project.py`, las órdenes `undo` y `redo` (`file.undo()` /
   `file.redo()`):
   - `dirty=True`;
   - si el piso activo dejó de existir, pasa al de cota más cercana a 0,00;
   - textos "No hay nada que deshacer." / "No hay nada que rehacer.".
-- [ ] T032 [US2] En `app/src/renderer/storey-panel.js`:
+- [ ] T033 [US2] En `app/src/renderer/storey-panel.js`:
   - **un clic** selecciona la fila;
   - **botones**: Agregar piso arriba, Agregar piso abajo, Editar piso… y Borrar piso, que se desactivan según
     [ui.md](contracts/ui.md);
@@ -335,17 +355,22 @@ reabrir: mismos nombres, cotas y alturas.
     `edit_storey` con lo que cambió;
   - **Borrar piso**: si `count_storey_elements > 0`, `bim.confirmDelete` muestra el diálogo nativo «El piso «X»
     tiene N elementos. Se borrarán junto con el piso.» con [Borrar] / [Cancelar].
-- [ ] T033 [US2] En `app/src/main/main.js`, la confirmación de borrado (`dialog.showMessageBox`) y Edición >
+- [ ] T034 [US2] En `app/src/main/main.js`, la confirmación de borrado (`dialog.showMessageBox`) y Edición >
   Deshacer / Rehacer (Ctrl+Z / Ctrl+Y). En `app/src/renderer/app.js`, actualizar las mallas con `changed_ids` /
   `deleted_ids`.
-- [ ] T034 [US2] En `app/test/window-test.js`, sección "Historia 2":
+- [ ] T035 [US2] En `app/test/window-test.js`, sección "Historia 2":
   - agregar arriba dos veces y abajo una → la tabla tiene 4 filas en el orden correcto;
   - editar la Planta Baja con altura 3,50 desde el diálogo → los valores de la tabla;
   - una cota inválida → el mensaje exacto y la tabla sin cambios;
   - borrar "Sótano 1";
   - Deshacer y Rehacer desde el menú → la tabla;
+  - **pregunta por cambios sin guardar (FR-010)**:
+    - con cambios, Archivo > Nuevo proyecto y la respuesta "Cancelar" en la cola → se registró «¿Guardar cambios
+      antes de cerrar?» y la tabla no cambió;
+    - con cambios, cerrar la ventana y la respuesta "No guardar" → se registró la pregunta y la ventana se cerró
+      (último paso de la prueba);
   - captura `h2`.
-- [ ] T035 [US2] Ejecutar las dos pruebas automáticas y mostrar la salida real. Hacer commit.
+- [ ] T036 [US2] Ejecutar las dos pruebas automáticas y mostrar la salida real. Hacer commit.
 
 **Punto de control**: las Historias 1 y 2 funcionan.
 
@@ -360,30 +385,33 @@ sus elementos y el 3D muestra todos.
 
 ### Pruebas de la Historia 3
 
-- [ ] T036 [US3] En `engine/tests/test_engine.py`:
+- [ ] T037 [US3] En `engine/tests/test_engine.py`:
   - `activate_storey` cambia `active_storey_id` sin tocar `dirty` ni `can_undo`;
   - siempre hay exactamente uno activo (FR-021): después de borrar el activo y después de deshacer;
   - `meshes()` de `con_elementos` devuelve cada muro con su `storey_id`.
 
 ### Implementación de la Historia 3
 
-- [ ] T037 [US3] En `engine/bimsimple_engine/storeys.py`, la orden `activate_storey(id)`: «Activar no cambia el IFC
+- [ ] T038 [US3] En `engine/bimsimple_engine/storeys.py`, la orden `activate_storey(id)`: «Activar no cambia el IFC
   ni marca cambios»; el piso tiene que existir. Registrarla en `commands.py`.
-- [ ] T038 [US3] En `app/src/renderer/storey-panel.js`, el **doble clic** en una fila manda `activate_storey`
+- [ ] T039 [US3] En `app/src/renderer/storey-panel.js`, el **doble clic** en una fila manda `activate_storey`
   (FR-020). Debajo de la tabla, la ayuda "Doble clic en un piso para activarlo.".
-- [ ] T039 [US3] En `app/src/renderer/viewports.js` y `app.js`:
+- [ ] T040 [US3] En `app/src/renderer/viewports.js` y `app.js`:
   - al cambiar el piso activo, `setActiveStorey(id)` y la etiqueta "Planta — <piso>";
   - el botón **Encuadrar** llama a `fit()`;
   - la primera vez que aparecen elementos, encuadre automático.
-- [ ] T040 [US3] En `app/test/window-test.js`, sección "Historia 3":
+- [ ] T041 [US3] En `app/test/window-test.js`, sección "Historia 3":
   - antes de la ventana, generar los IFC de prueba con
     `runtime\python\python.exe -m tests.make_fixtures app\test-output\fixtures` (desde `engine/`);
   - abrir `con_elementos.ifc`;
   - `dblclick` en "Piso 1" → activo "Piso 1" y `debugVisiblePlanStoreys()` = [Piso 1];
   - el 3D muestra los 3 grupos;
   - la activación tarda menos de 0,2 s (SC-004);
+  - **borrar un piso con elementos (FR-017)**: seleccionar "Piso 2" y pulsar Borrar piso, con "Cancelar" en la
+    cola → se registró «El piso «Piso 2» tiene 1 elemento. Se borrarán junto con el piso.» y no se borró nada;
+    repetir con "Borrar" → el piso y su muro desaparecen de la tabla y de la escena;
   - captura `h3`.
-- [ ] T041 [US3] Ejecutar las dos pruebas automáticas y mostrar la salida real. Hacer commit.
+- [ ] T042 [US3] Ejecutar las dos pruebas automáticas y mostrar la salida real. Hacer commit.
 
 **Punto de control**: las Historias 1 a 3 funcionan.
 
@@ -397,7 +425,7 @@ sus elementos y el 3D muestra todos.
 
 ### Pruebas de la Historia 4
 
-- [ ] T042 [US4] En `engine/tests/test_engine.py`:
+- [ ] T043 [US4] En `engine/tests/test_engine.py`:
   - **`otro_programa_mm`**: 4 pisos con cotas −2,80 / 0,00 / 3,20 / 6,00 y alturas por distancia; activo "Nivel 0";
     `dirty=False`;
   - **`dos_edificios`, `sin_pisos` y `sin_edificio`**: `notice` con su texto exacto;
@@ -408,19 +436,21 @@ sus elementos y el 3D muestra todos.
 
 ### Implementación de la Historia 4
 
-- [ ] T043 [US4] En `engine/bimsimple_engine/project.py`, la orden `open_project(path)` según research R5:
+- [ ] T044 [US4] En `engine/bimsimple_engine/project.py`, la orden `open_project(path)` según research R5:
   1. `ifcopenshell.open` en `try`, exigiendo `IfcProject`; si falla, `EngineError` con el texto exacto, **sin tocar**
      el proyecto abierto;
   2. reemplaza el archivo, `path`, `dirty=False`, y vacía el historial;
   3. activa el piso de cota más cercana a 0,00.
-- [ ] T044 [US4] En `app/src/main/main.js`, **Archivo > Abrir IFC…**: pregunta si hay cambios, abre
+- [ ] T045 [US4] En `app/src/main/main.js`, **Archivo > Abrir IFC…**: pregunta si hay cambios, abre
   `dialog.showOpenDialog` con el filtro "Modelo IFC" (`*.ifc`) y llama a `open_project`. En `app.js`, pide todas las
   mallas, encuadra y muestra el error si lo hay.
-- [ ] T045 [US4] En `app/test/window-test.js`, sección "Historia 4":
+- [ ] T046 [US4] En `app/test/window-test.js`, sección "Historia 4":
   - abrir `otro_programa_mm.ifc` → 4 filas, activo "Nivel 0";
   - abrir `danado.ifc` → el mensaje exacto y la tabla sin cambios;
+  - **pregunta por cambios sin guardar (FR-010)**: agregar un piso; Archivo > Abrir IFC… con "Cancelar" en la cola →
+    se registró la pregunta y la tabla no cambió; repetir con "No guardar" → se abre el archivo elegido;
   - captura `h4`.
-- [ ] T046 [US4] Ejecutar las dos pruebas automáticas y mostrar la salida real. Hacer commit.
+- [ ] T047 [US4] Ejecutar las dos pruebas automáticas y mostrar la salida real. Hacer commit.
 
 **Punto de control**: las cuatro historias pasan las pruebas automáticas.
 
@@ -430,19 +460,20 @@ sus elementos y el 3D muestra todos.
 
 **Propósito**: robustez, instalador, prueba con ventana, documentos y el bloqueo del repositorio.
 
-- [ ] T047 En `app/test/window-test.js`, sección "Motor detenido":
+- [ ] T048 En `app/test/window-test.js`, sección "Motor detenido":
   - terminar el proceso del motor con un gancho de prueba de `engine.js`;
   - comprobar que aparece el aviso exacto de [ui.md](contracts/ui.md), que el motor vuelve a estar listo sin proyecto
     y que las órdenes posteriores funcionan.
 
   Ejecutar y mostrar la salida.
-- [ ] T048 [P] Crear `app/build/licencias/` con los textos de licencia de Electron (MIT), Three.js (MIT),
-  camera-controls (MIT), Python (`runtime/python/LICENSE.txt`) y las dependencias de Python (`*.dist-info`).
+- [ ] T049 [P] ⛔ PERMISO (solo para descargar el texto de la LGPL-3.0): crear `app/build/licencias/` con los textos
+  de licencia de Electron (MIT), Three.js (MIT), camera-controls (MIT), Python (`runtime/python/LICENSE.txt`) y las
+  dependencias de Python (`*.dist-info`).
   - Para IfcOpenShell, los textos GPL-3.0 y LGPL-3.0. El de GPL-3.0 es el `LICENSE` actual del repositorio; el de
-    LGPL-3.0 se obtiene de la fuente oficial, con permiso si hay que descargarlo.
+    LGPL-3.0 se descarga de https://www.gnu.org/licenses/lgpl-3.0.txt después de pedir permiso.
   - Agregar `app/build/LEEME-licencias.txt`, que dice que BIM Simple usa IfcOpenShell bajo LGPL y dónde está su
     código fuente.
-- [ ] T049 ⛔ PERMISO: pedir permiso para descargar electron-builder y ejecutar
+- [ ] T050 ⛔ PERMISO: pedir permiso para descargar electron-builder y ejecutar
   `npm --prefix app install --save-dev --save-exact electron-builder@26.17.0`. Agregar a `app/package.json`:
   - el script `"dist": "electron-builder --win"`;
   - el bloque `"build"` de research R9 / [programa.md](contracts/programa.md):
@@ -452,41 +483,43 @@ sus elementos y el 3D muestra todos.
     - `win.target: nsis x64`, con el icono `build/icon.ico`;
     - `nsis`: `oneClick: true`, `perMachine: false`, `createDesktopShortcut: true`,
       `createStartMenuShortcut: true`, `shortcutName: "BIM Simple"`, `packElevateHelper: false`,
-      `differentialPackage: false`;
+      `differentialPackage: false`, **`deleteAppDataOnUninstall: true`** (borra `%APPDATA%\BIM Simple` al
+      desinstalar, para SC-005);
     - `include: build/installer.nsh`, que borra `%LOCALAPPDATA%\bim-simple-updater` al desinstalar.
-  - En `engine.js`, la ruta instalada: `PYTHONPATH` o `cwd` = `process.resourcesPath\engine`.
-- [ ] T050 ⛔ PERMISO: ejecutar `npm --prefix app run dist`, medir el tamaño de `app\dist\BIM Simple Setup 0.1.0.exe`
+  - El motor instalado se encuentra por la línea `..\engine` del `._pth` (T005). **No** usar `PYTHONPATH` ni `cwd`:
+    el Python embebido los ignora (research R9, ✅).
+- [ ] T051 ⛔ PERMISO: ejecutar `npm --prefix app run dist`, medir el tamaño de `app\dist\BIM Simple Setup 0.1.0.exe`
   y **pedir permiso para instalarlo**. Después de instalar, comprobar y mostrar:
   - la ruta de instalación y los dos accesos directos;
   - que arranca, con permiso para abrir la ventana (SC-007 cronometrado);
-  - que se desinstala desde "Agregar o quitar programas" sin dejar `%LOCALAPPDATA%\Programs\…` ni
-    `%LOCALAPPDATA%\bim-simple-updater` (SC-005).
-- [ ] T051 ⛔ PERMISO: pedir permiso para abrir BIM Simple con ventana y hacer con el usuario la parte B de
-  [quickstart.md](quickstart.md) (B1 a B5): arranque, proyecto, pisos, navegación, deshacer, salir, y abrir el IFC en
-  otro programa BIM (SC-003). Anotar los resultados en el mensaje de commit de T056 y corregir lo que falle, con su
+  - que se desinstala desde "Agregar o quitar programas" sin dejar `%LOCALAPPDATA%\Programs\…`, ni
+    `%APPDATA%\BIM Simple`, ni `%LOCALAPPDATA%\bim-simple-updater` (SC-005).
+- [ ] T052 ⛔ PERMISO: pedir permiso para abrir BIM Simple con ventana y hacer con el usuario la parte B de
+  [quickstart.md](quickstart.md) (B1 a B5): arranque, Acerca de, proyecto, el tiempo de SC-001, los clics de SC-006,
+  pisos, navegación, deshacer, salir, y abrir el IFC en otro programa BIM (SC-003). Anotar los resultados en el mensaje de commit de T057 y corregir lo que falle, con su
   prueba automática.
-- [ ] T052 Anotar en `specs/001-espacio-trabajo-pisos/research.md` (R9) los pendientes **antes de vender**:
+- [ ] T053 Anotar en `specs/001-espacio-trabajo-pisos/research.md` (R9) los pendientes **antes de vender**:
   - la prueba en una PC limpia (Windows Sandbox o una máquina virtual; activar Windows Sandbox lo hace el usuario,
     porque pide administrador) para confirmar `MSVCP140.dll`;
   - la firma de código;
   - aclarar CGAL.
-- [ ] T053 [P] Reescribir `README.md`:
+- [ ] T054 [P] Reescribir `README.md`:
   - qué es BIM Simple;
   - requisitos (Windows 11, Node.js 24);
   - cómo preparar el entorno (`tools/setup-dev.ps1`), correr las pruebas y armar el instalador;
   - la estructura `app/` + `engine/`, el método Spec Kit (`.specify/`, `specs/`) y la licencia
-    ("Todos los derechos reservados", pendiente de T055).
-- [ ] T054 [P] Reescribir `PRUEBA_MANUAL.md` como la lista de prueba manual para el usuario: la parte B de
+    ("Todos los derechos reservados", pendiente de T056).
+- [ ] T055 [P] Reescribir `PRUEBA_MANUAL.md` como la lista de prueba manual para el usuario: la parte B de
   [quickstart.md](quickstart.md) en lenguaje simple y con casillas.
-- [ ] T055 ⛔ BLOQUEO R11 (decisión del usuario): **antes de cualquier `git push`**, el usuario tiene que:
+- [ ] T056 ⛔ BLOQUEO R11 (decisión del usuario): **antes de cualquier `git push`**, el usuario tiene que:
   1. hacer privado el repositorio `nestorfelipe00/bim-simple`, él mismo o autorizando
      `gh repo edit nestorfelipe00/bim-simple --visibility private --accept-visibility-change-consequences`;
   2. aprobar el reemplazo de `LICENSE` por el aviso "Copyright (c) 2026 Nestor Torres. Todos los derechos
      reservados."
 
   Solo después, y con permiso, se suben los commits.
-- [ ] T056 Marcar la especificación como implementada (`**Estado**: Implementada` en [spec.md](spec.md)), comprobar
-  que todas las tareas de este archivo están marcadas y hacer el commit final con los resultados de T051.
+- [ ] T057 Marcar la especificación como implementada (`**Estado**: Implementada` en [spec.md](spec.md)), comprobar
+  que todas las tareas de este archivo están marcadas y hacer el commit final con los resultados de T052.
 
 ---
 
@@ -499,7 +532,8 @@ sus elementos y el 3D muestra todos.
 - **Fases 3 a 6 (US1 a US4)**: dependen de la Fase 2.
   - US2, US3 y US4 usan la pantalla y el panel de US1 para verse, pero sus pruebas del motor son independientes.
   - US3 y US4 usan `con_elementos`, `otro_programa_mm` y los demás de T010.
-- **Fase 7**: depende de todas las historias. T049 y T050 necesitan permiso. T055 bloquea cualquier subida.
+- **Fase 7**: depende de todas las historias. T049 (texto LGPL), T050, T051 y T052 necesitan permiso. T056 bloquea
+  cualquier subida.
 
 ### Dentro de cada historia
 
@@ -513,7 +547,7 @@ sus elementos y el 3D muestra todos.
 - **Fase 1**: T002, T003 y T004.
 - **Fase 2**: T009, T010, T013, T015, T016 y T017 (archivos distintos), después de T007 y T008 para el motor.
 - **Fase 3**: T024 (`validator.js`) en paralelo con T022 y T023.
-- **Fase 7**: T048, T053 y T054.
+- **Fase 7**: T049, T054 y T055.
 
 ## Ejemplo de paralelo: Fase 2
 
@@ -541,7 +575,9 @@ US2 → US3 → US4 → Fase 7 (instalador y prueba manual).
 
 ## Notas
 
-- Puntos ⛔: T006 (entorno), T049 (electron-builder), T050 (armar e instalar), T051 (ventana y prueba manual) y T055
-  (repositorio y licencia, decisión del usuario).
+- Puntos ⛔: T006 (entorno), T049 (descarga del texto LGPL), T050 (electron-builder), T051 (armar e instalar), T052
+  (ventana y prueba manual) y T056 (repositorio y licencia, decisión del usuario).
+- **FR-023** (los elementos nuevos quedan en el piso activo) se verifica en la función 002, que trae las herramientas
+  de dibujo. En esta función se exige que el motor mantenga `active_storey_id` (T037) para que esas herramientas lo usen.
 - Nada de esta función toca otras instalaciones (constitución, Principio III).
 - No borrar archivos sin permiso. `PLAN.md` (referencia histórica del MVP) solo se borra si el usuario lo pide.

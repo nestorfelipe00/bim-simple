@@ -62,7 +62,8 @@ Contratos: [programa.md](contracts/programa.md), [ui.md](contracts/ui.md) y
    Genera `app/dist/BIM Simple Setup <versión>.exe`. Después de instalarlo:
    - existen los accesos directos;
    - el programa abre;
-   - "Agregar o quitar programas" lo desinstala sin dejar nada en la computadora (SC-005).
+   - "Agregar o quitar programas" lo desinstala sin dejar nada en la computadora (SC-005): ni
+     `%LOCALAPPDATA%\Programs\…`, ni `%APPDATA%\BIM Simple`, ni `%LOCALAPPDATA%\bim-simple-updater`.
 
 ## B. Prueba manual (con ventana)
 
@@ -71,9 +72,12 @@ Abrir **BIM Simple** desde su acceso directo. Marcar cada punto y anotar lo que 
 ### B1. Arranque y pantalla (FR-001 a FR-006, SC-007)
 - [ ] Desde el doble clic hasta poder pulsar "Nuevo proyecto" pasan menos de 10 s (cronometrar).
 - [ ] La ventana y la barra de tareas muestran el icono y el título de BIM Simple.
-- [ ] Solo hay menús Archivo y Edición; a la izquierda la planta, al centro el 3D y a la derecha el panel.
+- [ ] Solo hay menús Archivo, Edición y Ayuda; a la izquierda la planta, al centro el 3D y a la derecha el panel.
+- [ ] Ayuda > Acerca de BIM Simple muestra la versión, las licencias (IfcOpenShell bajo LGPL-3.0, con el enlace a su código) y dónde están los textos.
 
-### B2. Proyecto (FR-007 a FR-011)
+### B2. Proyecto (FR-007 a FR-011, SC-001, SC-006)
+- [ ] **SC-001**: sin ayuda y cronometrando, crear un proyecto, armar tres pisos con sus cotas y guardarlo, en menos de 3 minutos.
+- [ ] **SC-006**: cada acción (nuevo, abrir, guardar, agregar, editar, borrar, activar) se hace con 2 clics como máximo desde la pantalla principal, más la escritura de nombres o números.
 - [ ] Nuevo proyecto: "Planta Baja", 0,00 / 3,00, activa.
 - [ ] Ctrl+S en un proyecto nuevo abre el diálogo de Windows; después, Ctrl+S guarda sin preguntar.
 - [ ] Guardar IFC como… crea otro archivo, y el siguiente Ctrl+S guarda en ese.

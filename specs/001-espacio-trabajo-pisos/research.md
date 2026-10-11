@@ -167,6 +167,17 @@ instaló nada.
   3. El instalador deja una copia de sí mismo en `%LOCALAPPDATA%\bim-simple-updater`, que el
      desinstalador no borra. Se puede limpiar con un `installer.nsh` ⚠️; hay que comprobarlo para
      cumplir SC-005.
+  4. **Datos del programa al desinstalar** (análisis H2): por defecto quedan en
+     `%APPDATA%\BIM Simple`, porque `deleteAppDataOnUninstall` vale `false` (anexo, §104). Para
+     cumplir SC-005 se usa `deleteAppDataOnUninstall: true`, que solo existe en el instalador de un
+     paso; en esa carpeta no hay proyectos del usuario.
+- **Dónde encuentra Python al motor** (análisis H1) ✅: el Python embebible con `._pth` arranca
+  **aislado**. Comprobado con `sys.flags.isolated = 1` y `safe_path = True`: ignora `PYTHONPATH` y
+  la carpeta actual. Por eso el `._pth` lleva **dos** líneas relativas:
+  - `..\..\engine`, para desarrollo (`runtime\python` → `engine\` del repositorio);
+  - `..\engine`, para el programa instalado (`resources\python` → `resources\engine`).
+
+  Una ruta que no existe se ignora sin error.
 
 Detalle completo:
 [empaquetado-instalador.md](../../docs/base-tecnologica/anexos/empaquetado-instalador.md).

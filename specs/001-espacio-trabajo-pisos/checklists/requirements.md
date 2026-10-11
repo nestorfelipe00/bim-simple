@@ -48,3 +48,7 @@
   - SC-004, SC-005 y SC-007 se ajustaron a la base nueva.
 
   Todas las comprobaciones siguen pasando.
+- Iteración 4 (análisis de coherencia):
+  - FR-003 agrega el menú Ayuda con "Acerca de BIM Simple" (hallazgo C2, Principio VI);
+  - FR-024 y FR-025 quedan en orden;
+  - se agregan dos aclaraciones (Acerca de y datos al desinstalar).

@@ -29,6 +29,10 @@ Blender, pensado para venderse cerrado.
   permite (FR-020).
 - P: ¿Cómo se navega el 3D? → R: Al estilo ArchiCAD/Revit, como en el prototipo que el usuario
   probó y aprobó (FR-025).
+- P: ¿Dónde se informan las licencias que exige la constitución (Principio VI)? → R: En "Ayuda >
+  Acerca de BIM Simple" (FR-003), aprobado tras el análisis de coherencia.
+- P: ¿Qué pasa con los datos del programa al desinstalar? → R: Se borran también (registros y caché
+  en `%APPDATA%\BIM Simple`), para cumplir SC-005; los proyectos del usuario no están ahí.
 
 ## Escenarios de usuario y pruebas *(obligatorio)*
 
@@ -174,9 +178,12 @@ sin cambios.
   directo en el escritorio y en el menú Inicio, y muestra directamente su pantalla de trabajo.
 - **FR-002**: La pantalla se divide en dos vistas: a la izquierda la planta (vista desde arriba,
   sin perspectiva, solo del piso activo) y a la derecha la vista 3D con todo el edificio.
-- **FR-003**: En la pantalla se ven: la barra de menús propia (Archivo y Edición), las dos vistas y
-  el panel "BIM Simple" (datos del proyecto, navegador de pisos y acciones). No hay menús ni
-  paneles ajenos a BIM Simple. La caja de herramientas propia llega con la función 2.
+- **FR-003**: En la pantalla se ven: la barra de menús propia (Archivo, Edición y Ayuda), las dos
+  vistas y el panel "BIM Simple" (datos del proyecto, navegador de pisos y acciones). No hay menús
+  ni paneles ajenos a BIM Simple. La caja de herramientas propia llega con la función 2.
+  - "Ayuda > Acerca de BIM Simple" muestra la versión, las librerías que usa con sus licencias
+    (IfcOpenShell bajo LGPL-3.0, con el enlace a su código fuente) y dónde están los textos de
+    licencia (constitución, Principio VI).
 - **FR-004**: El título de la ventana muestra el nombre del archivo, o "Proyecto sin guardar",
   seguido de "BIM Simple", con un asterisco cuando hay cambios sin guardar.
 - **FR-005**: La instalación se hace en un solo paso, sin permisos de administrador, y crea los
@@ -237,6 +244,14 @@ sin cambios.
   pisos.
 - **FR-023**: Todo elemento que se cree a continuación (con las herramientas de las funciones
   siguientes) queda contenido en el piso activo.
+**Textos**
+
+- **FR-024**: Todos los textos visibles de esta función (título de la ventana, menús, botones,
+  columnas, mensajes, confirmaciones y "Acerca de") están en español y usan los términos de
+  ArchiCAD: piso, cota, altura, navegador.
+
+**Navegación**
+
 - **FR-025**: Navegación al estilo ArchiCAD/Revit:
   - En la vista 3D:
     - el botón izquierdo, o Mayús + botón central, gira alrededor del punto del modelo bajo el
@@ -249,12 +264,6 @@ sin cambios.
     no rota.
   - "Encuadrar" lleva cada vista a mostrar el modelo completo: la planta, el piso activo; el 3D,
     el edificio.
-
-**Textos**
-
-- **FR-024**: Todos los textos visibles de esta función (título de la ventana, menús, botones,
-  columnas, mensajes y confirmaciones) están en español y usan los términos de ArchiCAD: piso,
-  cota, altura, navegador.
 
 ### Entidades clave
 

@@ -167,7 +167,8 @@ Fuera de git (en `.gitignore`): `runtime/`, `app/node_modules/`, `app/dist/`, `a
 
 ### Ventana (`app/src/main/`)
 - **Ventana**: 1400 × 860, `backgroundColor`, y las opciones de seguridad de research R2. El menú en
-  español sale de una plantilla con los atajos de [ui.md](contracts/ui.md).
+  español (Archivo, Edición y Ayuda) sale de una plantilla con los atajos de [ui.md](contracts/ui.md).
+  "Ayuda > Acerca de BIM Simple" muestra el aviso de licencias del Principio VI.
 - **Cierre**: `close` con `preventDefault` mientras haya cambios. Después, `dialog.showMessageBox`
   con Guardar / No guardar / Cancelar. "Salir" del menú pasa por el mismo camino.
 - **`engine.js`**:
@@ -187,8 +188,12 @@ Fuera de git (en `.gitignore`): `runtime/`, `app/node_modules/`, `app/dist/`, `a
   mallas que cambiaron (`changed_ids`/`deleted_ids`) o todas (nuevo, abrir, deshacer, rehacer).
 
 ### Instalador
-Ver research R9 y [programa.md](contracts/programa.md). `npm --prefix app run dist` arma el instalador
-con el Python embebido y el motor como recursos extra, fuera del asar.
+Ver research R9 y [programa.md](contracts/programa.md):
+- `npm --prefix app run dist` arma el instalador con el Python embebido y el motor como recursos
+  extra, fuera del asar;
+- el `._pth` de Python lleva `..\..\engine` (desarrollo) y `..\engine` (instalado), porque el Python
+  embebido ignora `PYTHONPATH`;
+- `deleteAppDataOnUninstall: true` borra `%APPDATA%\BIM Simple` al desinstalar (SC-005).
 
 ## Pasos que requieren permiso del usuario
 
