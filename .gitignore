@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.zip
+
+# Herramientas locales de Claude Code (skills de terceros)
+.claude/
+skills-lock.json
