@@ -123,6 +123,11 @@ function crearVentana() {
     },
   });
   ventana.on("page-title-updated", (e) => e.preventDefault()); // el título lo decide BIM Simple, no la página
+  // Los mensajes de la consola de la página quedan en salida\consola.txt (para depurar).
+  ventana.webContents.on("console-message", (detalles) => {
+    const d = detalles || {};
+    fs.appendFileSync(path.join(SALIDA, "consola.txt"), `[${d.level}] ${d.message} (${d.sourceId}:${d.lineNumber})\n`);
+  });
   ventana.on("close", async (e) => {
     if (cerrarSinPreguntar || !estado.sucio) return;
     e.preventDefault();

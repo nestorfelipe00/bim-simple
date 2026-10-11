@@ -1,9 +1,10 @@
 // Interfaz del prototipo: planta + 3D con Three.js; todo cambio del modelo lo hace el motor.
 import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { MapControls } from "three/addons/controls/MapControls.js";
+import CameraControls from "camera-controls";
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1); // IFC: Z hacia arriba
+CameraControls.install({ THREE });
 
 const PARAMS = new URLSearchParams(location.search);
 const PRUEBA = PARAMS.get("prueba") === "1";
@@ -40,17 +41,43 @@ const ctrlPlanta = new MapControls(camPlanta, divPlanta);
 ctrlPlanta.enableRotate = false;
 ctrlPlanta.screenSpacePanning = true;
 ctrlPlanta.mouseButtons = { LEFT: -1, MIDDLE: THREE.MOUSE.PAN, RIGHT: -1 }; // clic izquierdo = dibujar
+ctrlPlanta.zoomToCursor = true; // la rueda acerca hacia donde apunta el mouse
 ctrlPlanta.target.set(3, 2, 0);
 
+// Navegación 3D al estilo ArchiCAD/Revit:
+//  - botón izquierdo (o Mayús + botón central): girar alrededor del punto señalado
+//  - botón central o derecho: desplazar   · rueda: acercar hacia el mouse
 const cam3d = new THREE.PerspectiveCamera(40, 1, 0.1, 500);
-cam3d.position.set(15, -13, 11);
-const ctrl3d = new OrbitControls(cam3d, div3d);
-ctrl3d.target.set(3, 2, 1.5);
+const ctrl3d = new CameraControls(cam3d, div3d);
+ctrl3d.mouseButtons.left = CameraControls.ACTION.ROTATE;
+ctrl3d.mouseButtons.middle = CameraControls.ACTION.TRUCK;
+ctrl3d.mouseButtons.right = CameraControls.ACTION.TRUCK;
+ctrl3d.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
+ctrl3d.dollyToCursor = true;
+ctrl3d.maxPolarAngle = THREE.MathUtils.degToRad(88); // no se pasa por debajo del suelo ni se da vuelta
+ctrl3d.minDistance = 0.5;
+ctrl3d.maxDistance = 400;
+ctrl3d.smoothTime = 0.12;
+ctrl3d.draggingSmoothTime = 0.06;
+ctrl3d.setLookAt(15, -13, 11, 3, 2, 1.5, false);
+
+const rayo = new THREE.Raycaster();
+div3d.addEventListener("pointerdown", (e) => {
+  const girar = e.button === 0 || (e.button === 1 && e.shiftKey);
+  ctrl3d.mouseButtons.middle = e.shiftKey ? CameraControls.ACTION.ROTATE : CameraControls.ACTION.TRUCK;
+  if (!girar) return;
+  // El centro de giro pasa a ser el punto del modelo bajo el mouse, sin mover la vista.
+  const caja = div3d.getBoundingClientRect();
+  rayo.setFromCamera(new THREE.Vector2(((e.clientX - caja.left) / caja.width) * 2 - 1, -((e.clientY - caja.top) / caja.height) * 2 + 1), cam3d);
+  const toque = rayo.intersectObjects([...mallas.values()], false)[0];
+  if (toque) ctrl3d.setOrbitPoint(toque.point.x, toque.point.y, toque.point.z);
+}, { capture: true });
 
 // Vista previa del muro que se está dibujando.
 const vistaPrevia = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: "#1e5aa0" }));
 vistaPrevia.visible = false;
 escena.add(vistaPrevia);
+const dibujo = { activo: false, p1: null }; // estado de la herramienta Muro
 
 function dibujar() {
   const w = lienzo.clientWidth, h = lienzo.clientHeight;
@@ -79,8 +106,13 @@ function dibujar() {
   vistaPrevia.visible = dibujo.p1 !== null;
 }
 ctrlPlanta.addEventListener("change", dibujar);
-ctrl3d.addEventListener("change", dibujar);
 new ResizeObserver(dibujar).observe(lienzo);
+const reloj = new THREE.Timer();
+(function bucle(instante) { // el 3D se mueve suave: se redibuja mientras la cámara se está acomodando
+  reloj.update(instante);
+  if (ctrl3d.update(reloj.getDelta())) dibujar();
+  requestAnimationFrame(bucle);
+})();
 
 // Encuadra la planta en el piso activo y el 3D en todo el edificio.
 function encuadrar() {
@@ -99,9 +131,9 @@ function encuadrar() {
   ctrlPlanta.update();
   const centro = todo.getCenter(new THREE.Vector3()), radio = todo.getSize(new THREE.Vector3()).length() / 2;
   const dist = radio / Math.sin(THREE.MathUtils.degToRad(cam3d.fov / 2)) * 1.1;
-  ctrl3d.target.copy(centro);
-  cam3d.position.copy(centro).add(new THREE.Vector3(1, -1.1, 0.8).normalize().multiplyScalar(dist));
-  ctrl3d.update();
+  const pos = centro.clone().add(new THREE.Vector3(1, -1.1, 0.8).normalize().multiplyScalar(dist));
+  ctrl3d.setLookAt(pos.x, pos.y, pos.z, centro.x, centro.y, centro.z, !PRUEBA); // con transición suave
+  ctrl3d.update(0);
   dibujar();
 }
 
@@ -192,7 +224,6 @@ function mostrarEstado(texto) {
 }
 
 // ---------- dibujo de muros en la planta ----------
-const dibujo = { activo: false, p1: null };
 const medida = $("medida");
 
 function puntoEnPlanta(evento) {
