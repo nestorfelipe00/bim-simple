@@ -265,3 +265,21 @@ addSection(async function historia4(t) {
     t.tableRows());
   await t.capture("h4");
 });
+
+// ---------- Motor detenido (ui.md, "Motor detenido") ----------
+addSection(async function motorDetenido(t) {
+  const S = "Motor detenido";
+  const NOTICE = "El motor de BIM Simple se detuvo. Los cambios sin guardar se perdieron; el último archivo guardado no se modificó.";
+  await t.app.handleAction("add-above"); // cambios sin guardar que se pierden
+  await bim.test.killEngine();
+  const restarted = await waitFor(() => document.getElementById("messages").textContent === NOTICE && !t.app.getState().has_project, 15000, 20);
+  t.step(S, "Aviso exacto y el programa queda sin proyecto", restarted, { message: document.getElementById("messages").textContent, has_project: t.app.getState().has_project });
+  const ready = await bim.engineReady();
+  t.step(S, "El motor vuelve a estar listo", ready && ready.ready === true && ready.ifcopenshell === "0.9.0", ready);
+  t.step(S, "Título «BIM Simple» y panel «No hay ningún proyecto abierto»",
+    (await bim.test.windowTitle()) === "BIM Simple" && document.getElementById("project").textContent === "No hay ningún proyecto abierto" && t.app.meshes.size === 0,
+    await bim.test.windowTitle());
+  const created = await t.app.handleAction("new");
+  t.step(S, "Las órdenes siguientes funcionan: Nuevo proyecto", created && created.ok && JSON.stringify(t.tableRows()) === JSON.stringify([["● Planta Baja", "0,00", "3,00"]]), t.tableRows());
+  await t.capture("motor");
+});

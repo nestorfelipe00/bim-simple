@@ -1,0 +1,36 @@
+BIM Simple: licencias de los componentes de terceros
+=====================================================
+
+BIM Simple es un programa cerrado: Copyright (c) 2026 Nestor Torres. Todos los derechos reservados.
+Usa los componentes de abajo, cada uno con su licencia. Los textos están en la carpeta «licencias».
+
+IfcOpenShell 0.9.0 (LGPL-3.0)
+-----------------------------
+BIM Simple usa la biblioteca IfcOpenShell bajo la Licencia Pública General Reducida de GNU,
+versión 3 o posterior (LGPL-3.0-or-later, según los metadatos del paquete). La LGPL-3.0 se apoya en la GPL-3.0, por eso van los dos textos:
+  licencias/ifcopenshell/LGPL-3.0.txt
+  licencias/ifcopenshell/GPL-3.0.txt
+
+- IfcOpenShell va sin modificar, en su propia carpeta dentro de la instalación:
+    resources/python/Lib/site-packages/ifcopenshell
+- Se puede reemplazar por otra versión compatible: BIM Simple la usa como paquete de Python
+  y no la incluye dentro de su propio código.
+- Código fuente de IfcOpenShell: https://github.com/IfcOpenShell/IfcOpenShell
+  (versión 0.9.0).
+
+Componentes de la ventana y la interfaz
+---------------------------------------
+- Electron 44.4.5 (MIT): licencias/electron/LICENSE.txt. Electron incluye Chromium; sus avisos
+  van en el archivo LICENSES.chromium.html junto al programa.
+- Three.js 0.186.1 (MIT): licencias/three/LICENSE.txt
+- camera-controls 3.1.2 (MIT): licencias/camera-controls/LICENSE.txt
+
+Motor (Python embebido)
+-----------------------
+- Python 3.14.7 (PSF License): licencias/python/LICENSE.txt
+- Paquetes de Python, cada uno con su licencia en licencias/python-paquetes/<paquete>:
+  numpy (BSD-3-Clause, con partes 0BSD, MIT, Zlib y CC0-1.0), shapely (BSD-3-Clause; incluye
+  GEOS bajo LGPL-2.1, ver shapely-2.2.0/LICENSE_GEOS), lark (MIT), isodate (BSD),
+  python-dateutil (Apache-2.0 o BSD), six (MIT), typing_extensions (PSF-2.0), pyparsing (MIT),
+  pytest (MIT), pluggy (MIT), iniconfig (MIT), packaging (Apache-2.0 o BSD-2-Clause),
+  pygments (BSD-2-Clause), colorama (BSD).

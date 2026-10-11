@@ -1,43 +1,109 @@
 # BIM Simple
 
-Extensión de Blender que funciona encima de [Bonsai](https://bonsaibim.org) y ofrece una interfaz de modelado parecida a ArchiCAD: caja de herramientas con iconos propios, Info Box de parámetros y navegador de pisos. Sirve para dibujar muros, losas y columnas por piso sin entrar en los menús de Blender ni en los de Bonsai.
+Programa BIM de escritorio para arquitectos, con una forma de trabajo parecida a ArchiCAD. El modelo
+es un archivo **IFC** (IFC4, en metros), que es la única fuente de verdad: lo que se ve en pantalla sale del
+IFC, y el IFC guardado se abre en cualquier otro programa BIM.
 
-Cada elemento es una entidad IFC real (`IfcWall`, `IfcSlab`, `IfcColumn`) contenida en su `IfcBuildingStorey`. El `.ifc` resultante se abre y se edita con la interfaz estándar de Bonsai.
+> **Estado**: función 001 implementada. Incluye la pantalla (planta del piso activo + vista 3D), el proyecto
+> nuevo, Abrir / Guardar / Guardar como, el navegador de pisos (agregar, editar cota y altura, borrar,
+> activar con doble clic) y Deshacer / Rehacer. Las herramientas de dibujo (muro, losa, columna) llegan en las
+> funciones siguientes.
 
-> Estado: en desarrollo (MVP). Fuera del MVP: puertas, ventanas, cubiertas, escaleras, cortes, láminas y cómputos.
+## Cómo está hecho
+
+Son tres piezas (constitución, Principio III):
+
+| Pieza | Tecnología | Carpeta |
+|---|---|---|
+| **Ventana**: menús, diálogos de Windows, título, pregunta al cerrar | Electron 44.4.5 | `app/src/main/` |
+| **Interfaz**: planta, vista 3D y panel "BIM Simple" | Three.js 0.186.1 + camera-controls 3.1.2 | `app/src/renderer/` |
+| **Motor**: abre, cambia y guarda el IFC | Python 3.14.7 embebido + IfcOpenShell 0.9.0 | `engine/bimsimple_engine/` |
+
+La interfaz nunca toca el IFC: le manda órdenes al motor, una línea JSON por mensaje
+([contracts/core_api.md](specs/001-espacio-trabajo-pisos/contracts/core_api.md)).
 
 ## Requisitos
 
-- Blender 5.2
-- Bonsai 0.9.0 (versión `py313`), instalado y activado
+- Windows 11.
+- Node.js 24 y npm 11, solo para desarrollar.
 
-## Instalación
+## Preparar el entorno de desarrollo
 
-1. Arma el paquete de la extensión desde la carpeta del repositorio:
-
-   ```
-   "C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" --command extension build --source-dir bim_simple
-   ```
-
-   Se crea `bim_simple-0.1.0.zip`.
-2. En Blender: Editar > Preferencias > Obtener extensiones > menú ⌄ > Instalar desde disco, y elige el `.zip`.
-3. En la barra lateral de la vista 3D (tecla N), pestaña **BIM Simple**, pulsa **Nuevo proyecto**.
-
-## Prueba automática
-
-```
-"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" --background --python tests/test_mvp.py
+```bash
+powershell -ExecutionPolicy Bypass -File tools/setup-dev.ps1
 ```
 
-Crea un proyecto con pisos a 0,00, 3,00 y 6,00 m, dibuja en el Piso 1 cuatro muros de 6 × 4 m, una losa y una columna, guarda el IFC, lo vuelve a abrir y comprueba el resultado.
+Arma dos carpetas que no van al repositorio:
+
+- `runtime/python`: Python embebible con IfcOpenShell y sus dependencias, en las versiones fijas de
+  `engine/requirements.txt`.
+- `app/node_modules`: Electron, Three.js y camera-controls, en las versiones fijas de `app/package.json`.
+
+Sin parámetros copia el Python ya verificado del prototipo. Con `-Descargar` lo baja de python.org y PyPI y
+verifica el SHA-256.
+
+## Abrir el programa en modo de desarrollo
+
+```bash
+npm --prefix app start
+```
+
+## Pruebas automáticas
+
+Prueba del motor, sin interfaz:
+
+```bash
+runtime/python/python.exe -m pytest engine/tests -q -p no:cacheprovider
+```
+
+Prueba del programa, con la ventana oculta: recorre las cuatro historias como lo haría el usuario y deja
+`resultado.json` y capturas en `app/test-output/`.
+
+```bash
+npm --prefix app test
+```
+
+Las dos tienen que terminar en verde: `N passed` y `RESULTADO: TODO OK`.
+
+## Instalador
+
+```bash
+npm --prefix app run dist
+```
+
+Genera `app/dist/BIM Simple Setup <versión>.exe`. El instalador es por usuario y no pide administrador.
+Crea los accesos directos en el Escritorio y en el menú Inicio, y se desinstala desde "Agregar o quitar
+programas". Necesita electron-builder (tarea T050 de la función 001).
 
 ## Estructura
 
-- `bim_simple/`: la extensión (`core.py` tiene la lógica sin interfaz que usan las herramientas y la prueba).
-- `tests/test_mvp.py`: prueba automática.
-- `tools/make_icons.py`: genera los iconos `.dat` de la caja de herramientas.
-- `PLAN.md`: API de Bonsai usada, decisiones de diseño y riesgos.
+```
+app/                  ventana e interfaz (Electron)
+  src/main/           proceso principal: main.js, engine.js (motor), validator.js
+  src/renderer/       página: vistas, panel de pisos, mallas
+  test/               prueba del programa con la ventana oculta
+  build/              icono, textos de licencias
+engine/               motor (Python)
+  bimsimple_engine/   protocolo, proyecto, pisos, geometría
+  tests/              pruebas del motor e IFC de prueba
+runtime/python/       Python embebido (lo arma tools/setup-dev.ps1; no está en git)
+tools/                setup-dev.ps1, make_icon.py
+specs/                especificaciones de cada función (Spec Kit)
+.specify/             constitución y plantillas de Spec Kit
+docs/                 evaluación de la base tecnológica y prototipo
+```
+
+## Método de trabajo
+
+Cada función se construye con [Spec Kit](https://github.com/github/spec-kit): constitución
+(`.specify/memory/constitution.md`) → especificación → plan → tareas → análisis → implementación, en
+`specs/<número>-<nombre>/`.
 
 ## Licencia
 
-GPL-3.0-or-later, igual que Bonsai.
+Copyright (c) 2026 Nestor Torres. Todos los derechos reservados.
+
+El archivo `LICENSE` del repositorio todavía tiene el texto GPL-3.0 del MVP anterior (una extensión de Blender
+que ya no se usa). Su reemplazo está pendiente de la decisión del usuario (tarea T056). Los componentes de
+terceros y sus licencias están en `app/build/LEEME-licencias.txt`. IfcOpenShell se usa bajo LGPL-3.0, en su
+propia carpeta, sin modificar y reemplazable.

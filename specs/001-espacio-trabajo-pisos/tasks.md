@@ -460,7 +460,7 @@ sus elementos y el 3D muestra todos.
 
 **Propósito**: robustez, instalador, prueba con ventana, documentos y el bloqueo del repositorio.
 
-- [ ] T048 En `app/test/window-test.js`, sección "Motor detenido":
+- [X] T048 En `app/test/window-test.js`, sección "Motor detenido":
   - terminar el proceso del motor con un gancho de prueba de `engine.js`;
   - comprobar que aparece el aviso exacto de [ui.md](contracts/ui.md), que el motor vuelve a estar listo sin proyecto
     y que las órdenes posteriores funcionan.
@@ -498,18 +498,18 @@ sus elementos y el 3D muestra todos.
   [quickstart.md](quickstart.md) (B1 a B5): arranque, Acerca de, proyecto, el tiempo de SC-001, los clics de SC-006,
   pisos, navegación, deshacer, salir, y abrir el IFC en otro programa BIM (SC-003). Anotar los resultados en el mensaje de commit de T057 y corregir lo que falle, con su
   prueba automática.
-- [ ] T053 Anotar en `specs/001-espacio-trabajo-pisos/research.md` (R9) los pendientes **antes de vender**:
+- [X] T053 Anotar en `specs/001-espacio-trabajo-pisos/research.md` (R9) los pendientes **antes de vender**:
   - la prueba en una PC limpia (Windows Sandbox o una máquina virtual; activar Windows Sandbox lo hace el usuario,
     porque pide administrador) para confirmar `MSVCP140.dll`;
   - la firma de código;
   - aclarar CGAL.
-- [ ] T054 [P] Reescribir `README.md`:
+- [X] T054 [P] Reescribir `README.md`:
   - qué es BIM Simple;
   - requisitos (Windows 11, Node.js 24);
   - cómo preparar el entorno (`tools/setup-dev.ps1`), correr las pruebas y armar el instalador;
   - la estructura `app/` + `engine/`, el método Spec Kit (`.specify/`, `specs/`) y la licencia
     ("Todos los derechos reservados", pendiente de T056).
-- [ ] T055 [P] Reescribir `PRUEBA_MANUAL.md` como la lista de prueba manual para el usuario: la parte B de
+- [X] T055 [P] Reescribir `PRUEBA_MANUAL.md` como la lista de prueba manual para el usuario: la parte B de
   [quickstart.md](quickstart.md) en lenguaje simple y con casillas.
 - [ ] T056 ⛔ BLOQUEO R11 (decisión del usuario): **antes de cualquier `git push`**, el usuario tiene que:
   1. hacer privado el repositorio `nestorfelipe00/bim-simple`, él mismo o autorizando

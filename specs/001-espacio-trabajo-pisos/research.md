@@ -179,6 +179,21 @@ instaló nada.
 
   Una ruta que no existe se ignora sin error.
 
+- **Pendientes antes de vender** (T053, anotados al cerrar la función 001):
+  1. **Prueba en una PC limpia** (Windows Sandbox o una máquina virtual) para confirmar que el
+     programa arranca sin un `MSVCP140.dll` del sistema. Activar Windows Sandbox lo hace el usuario,
+     porque pide administrador.
+  2. **Firma de código** con un certificado OV (punto 2 de los riesgos).
+  3. **CGAL y demás bibliotecas dentro de IfcOpenShell**. La carpeta `ifcopenshell` del paquete 0.9.0
+     trae, además del núcleo OpenCASCADE (`TK*.dll`, LGPL-2.1 con excepción) que usa BIM Simple, los
+     núcleos `ifcopenshell_geometry_kernel_cgal.dll` y `..._cgalsimple.dll` (CGAL tiene partes
+     GPL-3.0), `manifold.dll` (Apache-2.0) y DLL de Boost (BSL-1.0). Su `dist-info` no trae ningún
+     texto de licencia. Hay que decidir si se quitan los núcleos CGAL del instalador (sin modificar
+     IfcOpenShell: solo no se copian esos archivos, si el motor arranca sin ellos) o se consulta a
+     un abogado, y agregar los textos de OpenCASCADE, Boost y manifold a `licencias/`.
+  4. **GEOS** (LGPL-2.1) viene dentro de shapely (`shapely.libs\geos*.dll`): es una DLL aparte y
+     reemplazable, y su texto ya está en `licencias/python-paquetes/shapely-2.2.0/LICENSE_GEOS`.
+
 Detalle completo:
 [empaquetado-instalador.md](../../docs/base-tecnologica/anexos/empaquetado-instalador.md).
 

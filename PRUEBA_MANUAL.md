@@ -1,89 +1,92 @@
-# Prueba manual de BIM Simple
+# Prueba manual de BIM Simple (función 001)
 
 Marca cada casilla cuando el resultado sea el esperado. Si algo falla, anota el número del paso y qué viste.
+Es la parte B de la [guía de validación](specs/001-espacio-trabajo-pisos/quickstart.md).
 
 ## 0. Antes de empezar
 
-- [ ] Abre Blender 5.2. La ventana abre sin mensajes de error.
-- [ ] En **Edit > Preferences > Add-ons** aparecen activados **Bonsai** y **BIM Simple**.
+- Abre BIM Simple con el acceso directo **BIM Simple** del Escritorio o del menú Inicio. Antes de instalarlo
+  también se puede abrir con `npm --prefix app start` desde la carpeta del proyecto.
+- Para probar archivos de otros programas sirven los IFC de prueba de `app\test-output\fixtures\`. Los crea
+  la prueba automática (`npm --prefix app test`):
+  - `con_elementos.ifc`: 3 pisos con un muro en cada uno;
+  - `otro_programa_mm.ifc`: 4 pisos, en milímetros;
+  - `no_es_ifc.ifc`: un texto con extensión `.ifc`.
 
-## 1. Proyecto nuevo y espacio de trabajo
+## 1. Arranque y pantalla
 
-1. En cualquier vista 3D, pulsa **N** para abrir la barra lateral y elige la pestaña **BIM Simple**.
-2. Pulsa **Nuevo proyecto**.
+- [ ] Ten un cronómetro listo. Desde el doble clic en el acceso directo hasta que se puede pulsar
+  **Nuevo proyecto** pasan menos de 10 segundos.
+- [ ] La ventana y la barra de tareas muestran el icono de BIM Simple y el título "BIM Simple".
+- [ ] Arriba solo están los menús **Archivo**, **Edición** y **Ayuda**.
+- [ ] A la izquierda está la **planta**, al centro la **vista 3D** y a la derecha el panel **BIM Simple**.
+- [ ] **Ayuda > Acerca de BIM Simple** muestra la versión, las licencias (IfcOpenShell bajo LGPL-3.0, con el
+  enlace a su código) y dónde están los textos de las licencias.
 
-- [ ] Arriba se activa el espacio **BIM Simple**.
-- [ ] A la izquierda está la planta ("Top", vista desde arriba). A la derecha, la vista 3D.
-- [ ] En la barra lateral de la derecha se ve el navegador **Pisos** con `Planta Baja +0,00 3,00`.
-- [ ] Tus otros espacios de trabajo (Layout, Modeling…) siguen igual que antes.
+## 2. Proyecto
 
-## 2. Caja de herramientas e iconos
+- [ ] **Tiempo para armar un proyecto**: sin ayuda y con el cronómetro, crea un proyecto, arma tres pisos con
+  sus cotas y guárdalo. Tiene que llevar menos de 3 minutos.
+- [ ] **Clics por acción**: nuevo, abrir, guardar, agregar, editar, borrar y activar se hacen con 2 clics como
+  máximo desde la pantalla principal, sin contar lo que se escribe.
+- [ ] **Archivo > Nuevo proyecto** muestra un solo piso, **Planta Baja**, con cota 0,00, altura 3,00 y marcado
+  con ●.
+- [ ] El título dice "Proyecto sin guardar — BIM Simple".
+- [ ] **Ctrl+S** en un proyecto nuevo abre el diálogo de Windows para elegir dónde guardar. Después de
+  guardar, el título muestra el nombre del archivo y un nuevo **Ctrl+S** guarda sin preguntar.
+- [ ] Al guardar aparece abajo, en el panel, "Guardado. Validación IFC4: 0 errores.".
+- [ ] **Archivo > Guardar IFC como…** crea otro archivo, y el siguiente Ctrl+S guarda en ese.
+- [ ] **Archivo > Abrir IFC…** con `no_es_ifc.ifc` muestra «No se pudo abrir «no_es_ifc.ifc»: no es un
+  archivo IFC válido.» y el proyecto abierto sigue igual.
+- [ ] **Abrir IFC…** con `otro_programa_mm.ifc` muestra 4 pisos (Subsuelo −2,80, Nivel 0 0,00, Nivel 1 3,20 y
+  Nivel 2 6,00) y deja activo **Nivel 0**.
+- [ ] El IFC que guardaste se abre sin errores en otro programa BIM, por ejemplo un visor IFC gratuito o
+  ArchiCAD.
 
-- [ ] La barra de la izquierda muestra solo 4 iconos: **Flecha, Muro, Losa, Columna**. No aparecen las herramientas de Blender ni las de Bonsai.
-- [ ] Al dejar el ratón sobre cada icono aparece su nombre en español.
-- [ ] En otro espacio de trabajo (por ejemplo Layout), la barra muestra todas las herramientas de siempre.
+## 3. Pisos
 
-## 3. Navegador de pisos
+Empieza con un proyecto nuevo.
 
-- [ ] Pulsa **+**: se abre un cuadro con Nombre, Cota y Altura. La cota propuesta queda encima del piso más alto. Crea **Piso 1** a 3,00 con altura 3,00.
-- [ ] **Un clic** sobre Piso 1 lo activa: la planta queda vacía, porque muestra solo ese piso.
-- [ ] Un clic sobre Planta Baja vuelve a mostrar lo de la Planta Baja.
-- [ ] **Doble clic sobre el nombre** permite renombrarlo.
-- [ ] **−** pide confirmación y borra el piso seleccionado con todo su contenido. Con un solo piso, el botón queda desactivado.
+- [ ] **Agregar piso arriba** dos veces: aparecen "Piso 1" a 3,00 y "Piso 2" a 6,00. El más alto queda
+  arriba en la lista.
+- [ ] **Agregar piso abajo**: aparece "Sótano 1" a −3,00.
+- [ ] Un clic en **Planta Baja** y **Editar piso…**: cambia la altura a 3,50 (con coma) y pulsa Aceptar.
+  Piso 1 pasa a 3,50 y Piso 2 a 6,50.
+- [ ] **Editar piso…** en Piso 1 con cota 0,00: aparece «La cota debe ser mayor que la del piso de abajo
+  («Planta Baja», 0,00 m).» y nada cambia.
+- [ ] Abre `con_elementos.ifc`, selecciona **Piso 2** y pulsa **Borrar piso**. Aparece «El piso «Piso 2»
+  tiene 1 elemento. Se borrarán junto con el piso.». Con **Cancelar** no se borra nada; con **Borrar**
+  desaparecen el piso y su muro, también en el 3D.
+- [ ] Con un solo piso, el botón **Borrar piso** queda desactivado.
 
-## 4. Muro
+## 4. Piso activo y navegación
 
-Con la Planta Baja activa, elige la herramienta **Muro**.
+Con `con_elementos.ifc` abierto:
 
-- [ ] El **Info Box** (barra sobre la vista) muestra: Espesor 0,20 · 🔗 Altura 3,00 (piso) · Referencia Exterior.
-- [ ] En la planta, **clic** en el inicio y **clic** en cada esquina. Mientras mueves el ratón se ven la línea de vista previa y las cotas.
-- [ ] Mantén **Shift**: el tramo queda fijo en 0°, 45° o 90°.
-- [ ] Apunta el ratón en una dirección, escribe **5** y pulsa **Enter**: el tramo mide exactamente 5,00 m en esa dirección.
-- [ ] **Clic en el primer punto** cierra el contorno; **Esc** o **clic derecho** terminan. Los muros quedan unidos en las esquinas y en el 3D miden 3,00 de alto.
-- [ ] Cambia la Referencia a **Centro** y dibuja otro muro: la línea dibujada queda en el eje del muro.
-- [ ] Quita el candado 🔗 de la altura, escribe 2,50 y dibuja: el muro mide 2,50.
+- [ ] Un clic en un piso solo lo selecciona (fondo de color). El **doble clic** lo activa al instante: pasa a
+  tener ● y la etiqueta de la planta dice "Planta — <nombre del piso>".
+- [ ] La planta muestra solo el muro del piso activo; el 3D muestra todo el edificio.
+- [ ] **Vista 3D**:
+  - [ ] el botón izquierdo gira alrededor del punto que señalas, sin saltos;
+  - [ ] el botón central o el derecho desplazan la vista;
+  - [ ] la rueda acerca hacia donde está el ratón;
+  - [ ] no se puede girar por debajo del suelo.
+- [ ] **Planta**: la rueda acerca hacia el ratón, el botón central desplaza y la vista no gira.
+- [ ] **Encuadrar** centra la planta en el piso activo y el 3D en todo el edificio.
 
-## 5. Losa
+## 5. Deshacer y salir
 
-Elige la herramienta **Losa**.
+- [ ] Agrega un piso y pulsa **Ctrl+Z**: el piso desaparece. **Ctrl+Y** lo devuelve.
+- [ ] Cambia una altura y pulsa **Ctrl+Z**: todos los pisos vuelven a su cota.
+- [ ] Con cambios sin guardar, el título empieza con "* " y el panel dice "• Cambios sin guardar".
+- [ ] Cierra con la **X** habiendo cambios: aparece «¿Guardar cambios antes de cerrar?».
+  - [ ] **Cancelar** te deja en el programa.
+  - [ ] **Guardar** guarda y cierra.
+  - [ ] **No guardar** cierra sin guardar.
 
-- [ ] El Info Box muestra: Espesor 0,15 · Desfase 0,00.
-- [ ] Haz clic en cada vértice. Un **clic en el primer punto** cierra el contorno y crea la losa; **Enter** también la crea.
-- [ ] En el 3D, la **cara superior** de la losa queda a la cota del piso, debajo de los muros.
+## 6. Instalación (solo con el instalador)
 
-## 6. Columna
-
-Elige la herramienta **Columna**.
-
-- [ ] El Info Box muestra: Rectangular · Ancho 0,30 · Largo 0,30 · 🔗 Altura 3,00 (piso).
-- [ ] **Un clic** coloca la columna centrada en ese punto.
-- [ ] Cambia a **Circular**: aparece Diámetro. Coloca otra columna y comprueba que es redonda.
-
-## 7. Trabajar en otro piso
-
-- [ ] Activa **Piso 1** y dibuja un muro: en el 3D aparece a cota 3,00, encima de la Planta Baja.
-- [ ] En la planta solo se ve lo del Piso 1.
-
-## 8. Guardar y abrir
-
-- [ ] **File > Guardar IFC**: elige un nombre `.ifc` y guarda.
-- [ ] Cierra Blender, ábrelo de nuevo y usa **File > Abrir IFC…** con ese archivo. Se ve todo igual y el navegador muestra los pisos.
-- [ ] Cambia al espacio **BIM** de Bonsai: los pisos, muros, losas y columnas aparecen en la interfaz estándar de Bonsai.
-
-## 9. Deshacer y rehacer
-
-- [ ] Dibuja un muro y pulsa **Ctrl+Z**: el muro desaparece.
-- [ ] **Ctrl+Shift+Z** lo devuelve.
-
-## Diferencias conocidas con ArchiCAD
-
-- **Activar un piso:** se hace con **un clic**. Las listas de Blender no detectan doble clic, que aquí sirve para renombrar.
-- **La planta se ve desde arriba, sin plano de corte a 1,20 m.** Con el corte, Blender ocultaba la vista previa y las cotas de dibujo. Como solo se ve el piso activo, el resultado es casi igual.
-- **Atajos de Bonsai:** en modo Objeto siguen activos (G mover, X / Supr borrar, Tab…).
-- **Teclas del dibujo:**
-  - Escribir un número fija el largo (D).
-  - **Tab** cambia entre largo, ángulo, X e Y.
-  - **C** cierra el contorno.
-  - **Retroceso** quita el último punto.
-  - **M** cambia el tipo de imán.
-- **Versión de Bonsai:** BIM Simple usa partes internas de Bonsai 0.9.0. Conviene no actualizar Bonsai sin correr antes `tests/test_mvp.py`.
+- [ ] El instalador no pide permiso de administrador.
+- [ ] Quedan los accesos directos **BIM Simple** en el Escritorio y en el menú Inicio.
+- [ ] Desinstalar desde **Configuración > Aplicaciones > Aplicaciones instaladas** (Agregar o quitar programas) no deja
+  carpetas de BIM Simple en `%LOCALAPPDATA%\Programs`, `%APPDATA%` ni `%LOCALAPPDATA%`.
