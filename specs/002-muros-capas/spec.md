@@ -170,9 +170,14 @@ altura a 3,60: solo esa capa cambia. Borrar la capa interior: quedan 2. Guardar 
 - **Mover o borrar un piso con muros**: como en la función 001, los muros se mueven o se borran con su
   piso.
 - **Separar un muro unido en una esquina a otro muro compuesto**: el otro muro no cambia; las capas
-  separadas conservan la forma que tenían en la esquina.
+  separadas conservan la forma que tenían en la esquina. Si después se cambia la estructura o el espesor
+  de ese otro muro, su extremo en esa esquina queda recto, como en ArchiCAD cuando se borra un muro de
+  una esquina (research R10).
+- **Dibujar desde el extremo de una capa separada que tiene su esquina cortada**: el muro nuevo llega a
+  tope, sin unirse, para no perder el corte de esa capa (research R10).
 - **Muros de otros programas con capas de material en el IFC**: se ven con sus capas y se pueden
-  seleccionar, cambiar y separar.
+  seleccionar, cambiar y separar. Si su línea de referencia no es exterior, centro ni interior, el Info
+  Box la muestra como "Otra" y solo se cambian su altura y, si es de una capa, su material.
 - **Muros de otros programas sin capas** (o con formas que BIM Simple no edita, como muros curvos o con
   perfil): se ven y se conservan al guardar; se pueden seleccionar y borrar, pero no separar ni cambiar
   de estructura, y el Info Box lo explica.
