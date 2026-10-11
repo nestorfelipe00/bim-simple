@@ -71,9 +71,18 @@ Las dos tienen que terminar en verde: `N passed` y `RESULTADO: TODO OK`.
 npm --prefix app run dist
 ```
 
-Genera `app/dist/BIM Simple Setup <versión>.exe`. El instalador es por usuario y no pide administrador.
-Crea los accesos directos en el Escritorio y en el menú Inicio, y se desinstala desde "Agregar o quitar
-programas". Necesita electron-builder (tarea T050 de la función 001).
+Genera `app/dist/BIM Simple Setup <versión>.exe` (unos 150 MB) con electron-builder 26.17.0. El instalador es
+por usuario y no pide administrador. Crea los accesos directos en el Escritorio y en el menú Inicio, y se
+desinstala desde "Agregar o quitar programas" sin dejar restos.
+
+Para comprobar un programa instalado sin mostrar la ventana:
+
+```bash
+"%LOCALAPPDATA%\Programs\bim-simple\BIM Simple.exe" --smoke=resultado.json
+```
+
+Espera a que la interfaz y el motor estén listos, crea un proyecto, escribe el resultado en el archivo y sale
+con código 0 si todo anduvo.
 
 ## Estructura
 

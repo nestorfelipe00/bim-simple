@@ -179,6 +179,26 @@ instaló nada.
 
   Una ruta que no existe se ignora sin error.
 
+- **Resultados medidos** (T050 y T051, 2026-10-11) ✅:
+  - `BIM Simple Setup 0.1.0.exe`: **150,4 MB** (menos que lo estimado); instalado ocupa 606 MB. El
+    armado tarda unos 3 minutos; el primero bajó 7-Zip, NSIS 3.0.4.1 y nsis-resources 3.4.1. Con
+    `electronDist` = `node_modules/electron/dist` no baja Electron otra vez.
+  - **Hallazgo**: electron-builder deja fuera de `node_modules` toda carpeta `examples` del primer
+    nivel de cada paquete (`app-builder-lib/out/util/NodeModuleCopyHelper.js:24-41`), y la planta usa
+    `three/examples/jsm/controls/MapControls.js`. Se agregan `MapControls.js` y `OrbitControls.js`
+    con una entrada `from`/`to` en `files`. Sin eso, el programa instalado no cargaba la interfaz.
+  - Instalación silenciosa (`/S`) en 26 s, sin administrador: `%LOCALAPPDATA%\Programs\bim-simple`,
+    accesos directos "BIM Simple" en el Escritorio y en el menú Inicio, y entrada en "Agregar o
+    quitar programas". En modo silencioso no abre el programa al terminar
+    (`templates/nsis/installSection.nsh:93-97`).
+  - Arranque del programa instalado con la ventana oculta (`--smoke=<archivo>`): interfaz lista
+    ("Listo.") en **4,0 s la primera vez y 0,9 s después**, sin errores en la consola; crea un
+    proyecto. El motor instalado guarda y valida un IFC con 0 errores. El tiempo con la ventana
+    visible (SC-007) queda para la prueba manual.
+  - Desinstalar (`Uninstall BIM Simple.exe /S /currentuser`) no deja la carpeta del programa,
+    ni `%APPDATA%\BIM Simple`, ni `%LOCALAPPDATA%\bim-simple-updater`, ni los accesos directos, ni
+    la entrada del registro (**SC-005** ✅).
+
 - **Pendientes antes de vender** (T053, anotados al cerrar la función 001):
   1. **Prueba en una PC limpia** (Windows Sandbox o una máquina virtual) para confirmar que el
      programa arranca sin un `MSVCP140.dll` del sistema. Activar Windows Sandbox lo hace el usuario,

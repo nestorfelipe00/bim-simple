@@ -466,14 +466,14 @@ sus elementos y el 3D muestra todos.
     y que las órdenes posteriores funcionan.
 
   Ejecutar y mostrar la salida.
-- [ ] T049 [P] ⛔ PERMISO (solo para descargar el texto de la LGPL-3.0): crear `app/build/licencias/` con los textos
+- [X] T049 [P] ⛔ PERMISO (solo para descargar el texto de la LGPL-3.0): crear `app/build/licencias/` con los textos
   de licencia de Electron (MIT), Three.js (MIT), camera-controls (MIT), Python (`runtime/python/LICENSE.txt`) y las
   dependencias de Python (`*.dist-info`).
   - Para IfcOpenShell, los textos GPL-3.0 y LGPL-3.0. El de GPL-3.0 es el `LICENSE` actual del repositorio; el de
     LGPL-3.0 se descarga de https://www.gnu.org/licenses/lgpl-3.0.txt después de pedir permiso.
   - Agregar `app/build/LEEME-licencias.txt`, que dice que BIM Simple usa IfcOpenShell bajo LGPL y dónde está su
     código fuente.
-- [ ] T050 ⛔ PERMISO: pedir permiso para descargar electron-builder y ejecutar
+- [X] T050 ⛔ PERMISO: pedir permiso para descargar electron-builder y ejecutar
   `npm --prefix app install --save-dev --save-exact electron-builder@26.17.0`. Agregar a `app/package.json`:
   - el script `"dist": "electron-builder --win"`;
   - el bloque `"build"` de research R9 / [programa.md](contracts/programa.md):
@@ -488,7 +488,7 @@ sus elementos y el 3D muestra todos.
     - `include: build/installer.nsh`, que borra `%LOCALAPPDATA%\bim-simple-updater` al desinstalar.
   - El motor instalado se encuentra por la línea `..\engine` del `._pth` (T005). **No** usar `PYTHONPATH` ni `cwd`:
     el Python embebido los ignora (research R9, ✅).
-- [ ] T051 ⛔ PERMISO: ejecutar `npm --prefix app run dist`, medir el tamaño de `app\dist\BIM Simple Setup 0.1.0.exe`
+- [X] T051 ⛔ PERMISO: ejecutar `npm --prefix app run dist`, medir el tamaño de `app\dist\BIM Simple Setup 0.1.0.exe`
   y **pedir permiso para instalarlo**. Después de instalar, comprobar y mostrar:
   - la ruta de instalación y los dos accesos directos;
   - que arranca, con permiso para abrir la ventana (SC-007 cronometrado);

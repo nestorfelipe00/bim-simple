@@ -4,17 +4,81 @@
   "version": "0.1.0",
   "private": true,
   "description": "BIM Simple: modelado BIM sobre IFC",
+  "author": "Nestor Torres",
   "license": "UNLICENSED",
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
-    "test": "electron . --test"
+    "test": "electron . --test",
+    "dist": "electron-builder --win"
   },
   "dependencies": {
     "camera-controls": "3.1.2",
     "three": "0.186.1"
   },
   "devDependencies": {
-    "electron": "44.4.5"
+    "electron": "44.4.5",
+    "electron-builder": "26.17.0"
+  },
+  "build": {
+    "appId": "BIMSimple.BIMSimple",
+    "productName": "BIM Simple",
+    "copyright": "Copyright (c) 2026 Nestor Torres. Todos los derechos reservados.",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "electronDist": "node_modules/electron/dist",
+    "npmRebuild": false,
+    "files": [
+      "src/**/*",
+      {
+        "from": "node_modules/three/examples/jsm/controls",
+        "to": "node_modules/three/examples/jsm/controls",
+        "filter": ["MapControls.js", "OrbitControls.js"]
+      }
+    ],
+    "extraResources": [
+      {
+        "from": "../runtime/python",
+        "to": "python",
+        "filter": ["**/*", "!**/__pycache__/**"]
+      },
+      {
+        "from": "../engine/bimsimple_engine",
+        "to": "engine/bimsimple_engine",
+        "filter": ["**/*", "!**/__pycache__/**"]
+      }
+    ],
+    "extraFiles": [
+      {
+        "from": "build/licencias",
+        "to": "licencias"
+      },
+      {
+        "from": "build/LEEME-licencias.txt",
+        "to": "licencias/LEEME-licencias.txt"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BIM Simple",
+      "packElevateHelper": false,
+      "differentialPackage": false,
+      "deleteAppDataOnUninstall": true,
+      "include": "build/installer.nsh"
+    }
   }
 }

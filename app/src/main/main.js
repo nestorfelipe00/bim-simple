@@ -8,6 +8,8 @@ const { Engine } = require("./engine");
 const { validateFile } = require("./validator");
 
 const TEST = process.argv.includes("--test");
+// Comprobación del programa instalado sin mostrar la ventana: --smoke=<archivo.json> (ver smokeCheck).
+const SMOKE = (process.argv.find((arg) => arg.startsWith("--smoke=")) || "").slice("--smoke=".length) || null;
 const APP_DIR = path.join(__dirname, "..", "..");
 const TEST_OUTPUT = path.join(APP_DIR, "test-output");
 const APP_ID = "BIMSimple.BIMSimple";
@@ -195,9 +197,9 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1400,
     height: 860,
-    show: !TEST,
+    show: !TEST && !SMOKE,
     title: "BIM Simple",
-    icon: path.join(APP_DIR, "build", "icon.ico"),
+    icon: app.isPackaged ? undefined : path.join(APP_DIR, "build", "icon.ico"), // instalado: el icono del .exe
     backgroundColor: "#f4f4f2",
     webPreferences: {
       preload: path.join(__dirname, "..", "preload.js"),
@@ -297,6 +299,37 @@ if (TEST) {
   });
 }
 
+// Con la ventana oculta: espera la página y el motor, crea un proyecto, escribe el resultado y sale.
+async function smokeCheck(started) {
+  const result = { packaged: app.isPackaged, python: pythonExe, console_errors: [] };
+  win.webContents.on("console-message", (details) => {
+    if (details && details.level === "error") result.console_errors.push(details.message);
+  });
+  try {
+    await new Promise((resolve) => win.webContents.once("did-finish-load", resolve));
+    const ready = await engine.ready();
+    Object.assign(result, { ready_ms: ready.ready_ms, ifcopenshell: ready.ifcopenshell });
+    // La interfaz escribe "Listo." cuando cargó todos sus módulos y habló con el motor (app.js).
+    let ui = "";
+    for (let i = 0; i < 300 && ui !== "Listo."; i++) {
+      ui = await win.webContents.executeJavaScript('document.getElementById("messages").textContent');
+      if (ui !== "Listo.") await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    Object.assign(result, { ui_message: ui, until_ui_ready_ms: Date.now() - started });
+    const created = await engineRequest("new_project");
+    result.ok = ui === "Listo." && created.ok && created.result.state.storeys.length === 1 && result.console_errors.length === 0;
+    result.storeys = created.ok ? created.result.state.storeys.map((s) => s.name) : created.error;
+    result.title = win.getTitle();
+  } catch (error) {
+    result.ok = false;
+    result.error = String(error);
+  }
+  fs.writeFileSync(SMOKE, JSON.stringify(result, null, 2));
+  allowClose = true;
+  engine.stop();
+  setTimeout(() => app.exit(result.ok ? 0 : 1), 300);
+}
+
 // IFC de prueba (engine/tests/make_fixtures.py), generados antes de abrir la ventana.
 let testFixtures = null;
 function makeTestFixtures() {
@@ -306,6 +339,7 @@ function makeTestFixtures() {
 }
 
 app.whenReady().then(() => {
+  const started = Date.now();
   if (TEST) makeTestFixtures();
   engine = new Engine({ pythonExe, logFile: engineLogFile() });
   engine.on("crashed", () => {
@@ -320,6 +354,7 @@ app.whenReady().then(() => {
   engine.on("restarted", () => win && !win.isDestroyed() && win.webContents.send("engine-restarted"));
   engine.start().catch((error) => console.error("No se pudo iniciar el motor:", error));
   createWindow();
+  if (SMOKE) smokeCheck(started);
 });
 
 app.on("window-all-closed", () => {
