@@ -224,3 +224,9 @@ probadas:
 3. **Prototipo**: autorizado, con las descargas del §7 en una carpeta temporal fuera del proyecto.
 
 La constitución (v3.0.0) y el plan de la función 001 se actualizan con los resultados del prototipo.
+
+**Resultado del prototipo** ([prototipo/RESULTADOS.md](prototipo/RESULTADOS.md)): la opción C queda confirmada.
+- Un muro unido en esquina tarda ~30 ms de punta a punta y deshacer ~25 ms.
+- El IFC guardado pasa la validación IFC4 completa sin errores.
+- Funcionan el título propio, la pregunta al cerrar con la X y el doble clic en la lista.
+- Peso estimado: ~640 MB.

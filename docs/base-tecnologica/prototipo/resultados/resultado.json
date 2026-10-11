@@ -1,0 +1,170 @@
+{
+  "motor": {
+    "listo": true,
+    "ifcopenshell": "0.9.0",
+    "importar_ms": 303,
+    "listo_ms": 425
+  },
+  "listo_en_ms": 425,
+  "pasos": [
+    {
+      "nombre": "Nuevo proyecto",
+      "ok": true,
+      "motor_ms": 87.1,
+      "ida_vuelta_ms": 88,
+      "formas_3d_ms": 0,
+      "total_ms": 91
+    },
+    {
+      "nombre": "Agregar piso arriba (Piso 1)",
+      "ok": true,
+      "motor_ms": 4,
+      "ida_vuelta_ms": 4,
+      "formas_3d_ms": 0,
+      "total_ms": 6
+    },
+    {
+      "nombre": "Agregar piso arriba (Piso 2)",
+      "ok": true,
+      "motor_ms": 4.4,
+      "ida_vuelta_ms": 5,
+      "formas_3d_ms": 0,
+      "total_ms": 6
+    },
+    {
+      "nombre": "Recinto de 4 muros unidos en Planta Baja",
+      "ok": true,
+      "motor_ms": 61.7,
+      "ida_vuelta_ms": 62,
+      "formas_3d_ms": 11,
+      "total_ms": 99
+    },
+    {
+      "nombre": "Muro suelto unido en esquina",
+      "ok": true,
+      "motor_ms": 24.8,
+      "ida_vuelta_ms": 25,
+      "formas_3d_ms": 5,
+      "total_ms": 32
+    },
+    {
+      "nombre": "Muro encadenado",
+      "ok": true,
+      "motor_ms": 20.4,
+      "ida_vuelta_ms": 21,
+      "formas_3d_ms": 3,
+      "total_ms": 26
+    },
+    {
+      "nombre": "Recinto en Piso 1",
+      "ok": true,
+      "motor_ms": 64.5,
+      "ida_vuelta_ms": 65,
+      "formas_3d_ms": 6,
+      "total_ms": 73
+    },
+    {
+      "nombre": "Deshacer (Ctrl+Z)",
+      "ok": true,
+      "motor_ms": 14.2,
+      "ida_vuelta_ms": 14,
+      "formas_3d_ms": 9,
+      "total_ms": 25
+    },
+    {
+      "nombre": "Rehacer",
+      "ok": true,
+      "motor_ms": 17.7,
+      "ida_vuelta_ms": 18,
+      "formas_3d_ms": 15,
+      "total_ms": 35
+    },
+    {
+      "nombre": "Guardar IFC y validar",
+      "ok": true,
+      "motor_ms": 1682.7,
+      "ida_vuelta_ms": 1683,
+      "formas_3d_ms": 0,
+      "total_ms": 1684
+    },
+    {
+      "nombre": "Cambio después de guardar",
+      "ok": true,
+      "motor_ms": 24.2,
+      "ida_vuelta_ms": 25,
+      "formas_3d_ms": 5,
+      "total_ms": 31
+    }
+  ],
+  "capturas": [
+    {
+      "nombre": "1_planta_baja",
+      "tamaño": {
+        "width": 1384,
+        "height": 795
+      }
+    },
+    {
+      "nombre": "2_piso_1",
+      "tamaño": {
+        "width": 1384,
+        "height": 795
+      }
+    },
+    {
+      "nombre": "3_despues_de_deshacer",
+      "tamaño": {
+        "width": 1384,
+        "height": 795
+      }
+    }
+  ],
+  "doble_clic_activa_piso": {
+    "activo": "Piso 1",
+    "ms_aprox": 208
+  },
+  "validacion": {
+    "errores": 0,
+    "mensajes": []
+  },
+  "estado_final": {
+    "proyecto": true,
+    "pisos": [
+      {
+        "id": 59,
+        "nombre": "Piso 2",
+        "cota": 6,
+        "altura": 3
+      },
+      {
+        "id": 50,
+        "nombre": "Piso 1",
+        "cota": 3,
+        "altura": 3
+      },
+      {
+        "id": 40,
+        "nombre": "Planta Baja",
+        "cota": 0,
+        "altura": 3
+      }
+    ],
+    "activo": 50,
+    "sucio": true,
+    "ruta": "C:\\Users\\Usuario\\AppData\\Local\\Temp\\bsproto\\salida\\prueba_prototipo.ifc",
+    "deshacer": 7,
+    "rehacer": 0,
+    "muros": 11
+  },
+  "elementos_en_pantalla": 11,
+  "titulo_ventana": "* prueba_prototipo.ifc — BIM Simple",
+  "memoria_mb": 112,
+  "cierre": {
+    "habia_cambios": true,
+    "pregunto": [
+      "¿Guardar cambios antes de cerrar?"
+    ],
+    "ventana_cerrada": true
+  },
+  "arranque_hasta_ventana_lista_ms": 425
+}

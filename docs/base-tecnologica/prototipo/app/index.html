@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <title>BIM Simple</title>
+  <style>
+    :root { --fondo: #f4f4f2; --panel: #ffffff; --borde: #d6d3cd; --texto: #26231f; --tenue: #6f6a62; --acento: #1e5aa0; --activo: #e8f0fa; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; font: 13px "Segoe UI", system-ui, sans-serif; color: var(--texto); background: var(--fondo); }
+    body { display: flex; }
+    #vistas { position: relative; flex: 1; }
+    #lienzo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .vista { position: absolute; top: 0; bottom: 0; width: 50%; }
+    #vista-planta { left: 0; border-right: 1px solid var(--borde); cursor: crosshair; }
+    #vista-3d { right: 0; }
+    .etiqueta { position: absolute; top: 8px; left: 10px; padding: 3px 8px; background: rgba(255,255,255,.85); border: 1px solid var(--borde); border-radius: 4px; font-size: 12px; pointer-events: none; }
+    #medida { position: absolute; display: none; padding: 2px 6px; background: var(--acento); color: #fff; border-radius: 3px; font-size: 12px; pointer-events: none; }
+    #panel { width: 290px; background: var(--panel); border-left: 1px solid var(--borde); display: flex; flex-direction: column; padding: 12px; gap: 10px; overflow-y: auto; }
+    h1 { font-size: 15px; margin: 0; }
+    h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--tenue); margin: 6px 0 4px; }
+    #proyecto { color: var(--tenue); }
+    #proyecto .sucio { color: #a4501a; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-weight: 600; color: var(--tenue); font-size: 11px; padding: 3px 4px; border-bottom: 1px solid var(--borde); }
+    td { padding: 5px 4px; border-bottom: 1px solid #eeece8; cursor: default; user-select: none; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr.activo td { background: var(--activo); font-weight: 600; }
+    .botones { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    button { font: inherit; padding: 6px 8px; border: 1px solid var(--borde); background: #fafaf8; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #f0efeb; }
+    button.encendido { background: var(--acento); color: #fff; border-color: var(--acento); }
+    #estado { font-size: 12px; color: var(--tenue); white-space: pre-line; border-top: 1px solid var(--borde); padding-top: 8px; margin-top: auto; }
+    .ayuda { font-size: 12px; color: var(--tenue); }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }
+  </script>
+</head>
+<body>
+  <div id="vistas">
+    <canvas id="lienzo"></canvas>
+    <div id="vista-planta" class="vista"><span class="etiqueta" id="etiqueta-planta">Planta</span></div>
+    <div id="vista-3d" class="vista"><span class="etiqueta">Vista 3D</span></div>
+    <div id="medida"></div>
+  </div>
+  <aside id="panel">
+    <h1>BIM Simple</h1>
+    <div id="proyecto">No hay ningún proyecto abierto</div>
+    <h2>Navegador de pisos</h2>
+    <table>
+      <thead><tr><th>Piso</th><th class="num">Cota</th><th class="num">Altura</th></tr></thead>
+      <tbody id="pisos"></tbody>
+    </table>
+    <div class="ayuda">Doble clic en un piso para activarlo.</div>
+    <h2>Acciones</h2>
+    <div class="botones">
+      <button id="b-nuevo">Nuevo proyecto</button>
+      <button id="b-piso">Agregar piso arriba</button>
+      <button id="b-muro">Dibujar muro</button>
+      <button id="b-recinto">Recinto 6 × 4 m</button>
+      <button id="b-deshacer">Deshacer</button>
+      <button id="b-rehacer">Rehacer</button>
+      <button id="b-guardar">Guardar IFC</button>
+      <button id="b-encuadrar">Encuadrar</button>
+    </div>
+    <div class="ayuda">Muro: clic en el inicio y clic en el final; los tramos se encadenan. Mayús fija 0/45/90°. Esc o clic derecho termina.</div>
+    <div id="estado">Iniciando el motor…</div>
+  </aside>
+  <script type="module" src="./renderer.js"></script>
+</body>
+</html>

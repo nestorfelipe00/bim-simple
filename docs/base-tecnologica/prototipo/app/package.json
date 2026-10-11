@@ -1,0 +1,14 @@
+{
+  "name": "bim-simple-prototipo",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Prototipo de comprobación: Electron + Three.js + IfcOpenShell",
+  "main": "main.js",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "electron": "44.4.5"
+  }
+}
