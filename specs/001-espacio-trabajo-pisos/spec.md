@@ -11,7 +11,8 @@ Muro/Info Box y Losa/Columna van en especificaciones aparte). Pantalla partida e
 piso activo y vista 3D; menús sobrantes ocultos; proyecto nuevo IFC4 en metros sin reiniciar;
 abrir, guardar y guardar como; navegador de pisos con nombre, cota y altura para agregar,
 renombrar, borrar y activar pisos." Aclarado después: BIM Simple es un programa propio, sin
-Blender, pensado para venderse cerrado.
+Blender, pensado para venderse cerrado. Al cerrar la función (T056), el usuario decidió que sea
+software libre bajo GPL-3.0-or-later, como Blender, con el repositorio público.
 
 ## Aclaraciones
 
@@ -181,7 +182,8 @@ sin cambios.
 - **FR-003**: En la pantalla se ven: la barra de menús propia (Archivo, Edición y Ayuda), las dos
   vistas y el panel "BIM Simple" (datos del proyecto, navegador de pisos y acciones). No hay menús
   ni paneles ajenos a BIM Simple. La caja de herramientas propia llega con la función 2.
-  - "Ayuda > Acerca de BIM Simple" muestra la versión, las librerías que usa con sus licencias
+  - "Ayuda > Acerca de BIM Simple" muestra la versión, la licencia de BIM Simple (GPL-3.0-or-later,
+    con el enlace a su código), las librerías que usa con sus licencias
     (IfcOpenShell bajo LGPL-3.0, con el enlace a su código fuente) y dónde están los textos de
     licencia (constitución, Principio VI).
 - **FR-004**: El título de la ventana muestra el nombre del archivo, o "Proyecto sin guardar",

@@ -73,7 +73,7 @@ Abrir **BIM Simple** desde su acceso directo. Marcar cada punto y anotar lo que 
 - [ ] Desde el doble clic hasta poder pulsar "Nuevo proyecto" pasan menos de 10 s (cronometrar).
 - [ ] La ventana y la barra de tareas muestran el icono y el título de BIM Simple.
 - [ ] Solo hay menús Archivo, Edición y Ayuda; a la izquierda la planta, al centro el 3D y a la derecha el panel.
-- [ ] Ayuda > Acerca de BIM Simple muestra la versión, las licencias (IfcOpenShell bajo LGPL-3.0, con el enlace a su código) y dónde están los textos.
+- [ ] Ayuda > Acerca de BIM Simple muestra la versión, la licencia de BIM Simple (GPL-3.0 o posterior, con el enlace a su código), las licencias de las librerías (IfcOpenShell bajo LGPL-3.0, con el enlace a su código) y dónde están los textos.
 
 ### B2. Proyecto (FR-007 a FR-011, SC-001, SC-006)
 - [ ] **SC-001**: sin ayuda y cronometrando, crear un proyecto, armar tres pisos con sus cotas y guardarlo, en menos de 3 minutos.

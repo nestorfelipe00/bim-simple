@@ -32,6 +32,9 @@ reemplaza al de Electron y no las incluye.
 con este texto exacto:
 
 > BIM Simple 0.1.0
+> Copyright (c) 2026 Nestor Torres.
+> Software libre bajo la GPL-3.0 o posterior, sin ninguna garantía.
+> Código fuente: https://github.com/nestorfelipe00/bim-simple
 >
 > Usa estas librerías, cada una con su licencia:
 > • IfcOpenShell 0.9.0 — LGPL-3.0. Código fuente: https://github.com/IfcOpenShell/IfcOpenShell

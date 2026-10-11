@@ -51,7 +51,7 @@ formato propio.
 
 **Restricciones**:
 - Versiones fijas, publicadas hace dos semanas o más.
-- Sin código GPL o AGPL.
+- Sin código GPL o AGPL de otros (BIM Simple es GPL-3.0-or-later desde T056).
 - IfcOpenShell en una carpeta separada y reemplazable.
 - Unos 640 MB instalado.
 - Rutas cortas (la carpeta del proyecto tiene 36 caracteres).
@@ -69,7 +69,7 @@ formato propio.
 | III. Programa propio de escritorio | Las tres piezas, comunicadas solo por órdenes JSON ([core_api.md](contracts/core_api.md)). La interfaz no toca el IFC. Nada de Blender ni Bonsai. | ✅ |
 | IV. API verificada | Funciones de IfcOpenShell comprobadas con su firma y su salida real (research R4-R6). APIs de Electron y Three.js usadas en el prototipo o citadas en su documentación oficial. | ✅ |
 | V. Lógica separada y comprobada | Las reglas viven en el motor (`engine/`). Hay prueba del motor sin interfaz, prueba del programa con la ventana oculta y lista manual. | ✅ |
-| VI. Licencia y propiedad del código | Todas las dependencias revisadas (R10): permisivas, salvo IfcOpenShell (LGPL, carpeta aparte). No se copia código de Bonsai. **Bloqueo R11**: el repositorio de GitHub es público con licencia GPL; no se sube nada hasta que el usuario lo resuelva. **Pendiente antes de vender**: CGAL. | ✅ con bloqueo anotado |
+| VI. Licencia y propiedad del código | Todas las dependencias revisadas (R10): permisivas, salvo IfcOpenShell (LGPL, carpeta aparte). No se copia código de Bonsai. **R11 resuelto (T056)**: el usuario eligió repositorio público y GPL-3.0-or-later, como Blender (constitución 4.0.0). **Pendiente antes de entregar**: textos de CGAL, OpenCASCADE, Boost y manifold. | ✅ |
 | Restricciones técnicas | Versiones fijas de la constitución. Instalación por usuario. No toca otras instalaciones. | ✅ |
 | Flujo de trabajo: permisos | Hay que pedir permiso para: descargar dependencias si no se reutilizan las del prototipo, instalar el programa, crear accesos directos (los crea el instalador), abrir ventanas, borrar archivos obsoletos y cambiar el repositorio y su licencia. Lista en "Pasos que requieren permiso". | ✅ |
 
@@ -151,7 +151,7 @@ Fuera de git (en `.gitignore`): `runtime/`, `app/node_modules/`, `app/dist/`, `a
 - `PLAN.md`, `PRUEBA_MANUAL.md` y `README.md` describen el MVP sobre Blender. `README.md` y
   `PRUEBA_MANUAL.md` se reescriben al final de la función. `PLAN.md` queda como referencia histórica,
   salvo que el usuario prefiera borrarlo.
-- `LICENSE` (GPL-3.0): se reemplaza solo con aprobación del usuario (research R11).
+- `LICENSE` (GPL-3.0): se conserva; es la licencia de BIM Simple desde T056 (research R11).
 
 ## Diseño técnico por pieza
 
@@ -203,7 +203,7 @@ Ver research R9 y [programa.md](contracts/programa.md):
 | Descargar electron-builder (npm) | Antes de armar el instalador |
 | Abrir la ventana del programa para la prueba manual | Al terminar cada historia, si el usuario quiere verla |
 | Instalar el programa con su instalador (crea accesos directos) | Al final |
-| Hacer privado el repositorio de GitHub y reemplazar `LICENSE` | **Antes de subir cualquier commit** (R11) |
+| Hacer privado el repositorio de GitHub y reemplazar `LICENSE` | **Antes de subir cualquier commit** (R11). Resuelto en T056: repositorio público y GPL; subir commits sigue pidiendo permiso |
 | Borrar archivos obsoletos (`PLAN.md` u otros) | Solo si el usuario lo pide |
 
 ## Riesgos
@@ -216,8 +216,9 @@ Ver research R9 y [programa.md](contracts/programa.md):
    hay que resolverlo antes de vender.
 4. **`MSVCP140.dll` en una PC limpia** (research R9): se incluye junto al programa y hay que probar
    la instalación en una PC limpia (Windows Sandbox o una máquina virtual) antes de entregarlo.
-5. **CGAL dentro de IfcOpenShell**: pendiente legal antes de la primera venta (Principio VI).
-6. **Repositorio público con GPL** (R11): bloqueo antes de subir commits.
+5. **CGAL dentro de IfcOpenShell**: con BIM Simple bajo GPL (T056) es compatible; falta incluir sus
+   textos de licencia antes de entregar el programa (Principio VI).
+6. **Repositorio público con GPL** (R11): resuelto en T056; el usuario lo dejó público y con GPL.
 
 ## Seguimiento de complejidad
 

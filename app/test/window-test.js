@@ -101,6 +101,7 @@ addSection(async function historia1(t) {
   const log = await bim.test.dialogLog();
   const about = log.dialogs.find((d) => d.title === "Acerca de BIM Simple");
   t.step(S, "Acerca de: aviso LGPL-3.0 de IfcOpenShell con su enlace (FR-003, Principio VI)", about && about.message.includes("IfcOpenShell 0.9.0 — LGPL-3.0") && about.message.includes("https://github.com/IfcOpenShell/IfcOpenShell"), about);
+  t.step(S, "Acerca de: BIM Simple bajo GPL-3.0 o posterior, con el enlace a su código (Principio VI)", about && about.message.includes("GPL-3.0 o posterior") && about.message.includes("https://github.com/nestorfelipe00/bim-simple"), about);
   await t.capture("h1");
 });
 

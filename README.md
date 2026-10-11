@@ -110,9 +110,11 @@ Cada función se construye con [Spec Kit](https://github.com/github/spec-kit): c
 
 ## Licencia
 
-Copyright (c) 2026 Nestor Torres. Todos los derechos reservados.
+Copyright (c) 2026 Nestor Torres.
 
-El archivo `LICENSE` del repositorio todavía tiene el texto GPL-3.0 del MVP anterior (una extensión de Blender
-que ya no se usa). Su reemplazo está pendiente de la decisión del usuario (tarea T056). Los componentes de
-terceros y sus licencias están en `app/build/LEEME-licencias.txt`. IfcOpenShell se usa bajo LGPL-3.0, en su
-propia carpeta, sin modificar y reemplazable.
+BIM Simple es software libre, como Blender: se puede usar, copiar, modificar y redistribuir bajo la Licencia
+Pública General de GNU, versión 3 o posterior (GPL-3.0-or-later). El texto está en [LICENSE](LICENSE). Se
+entrega sin ninguna garantía.
+
+Los componentes de terceros y sus licencias están en `app/build/LEEME-licencias.txt`. IfcOpenShell se usa
+bajo LGPL-3.0, en su propia carpeta, sin modificar y reemplazable.

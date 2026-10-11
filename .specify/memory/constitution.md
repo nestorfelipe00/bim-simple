@@ -82,8 +82,12 @@ confirmar cada avance sin leer el código.
 
 ### VI. Licencia y propiedad del código (NO NEGOCIABLE)
 
-- BIM Simple se venderá como programa cerrado; quizás se abra más adelante. Por eso:
-  - NUNCA se copia ni se importa código con licencia GPL o AGPL: Blender, Bonsai, Chili3D,
+- BIM Simple es software libre, como Blender: Copyright (c) 2026 Nestor Torres, bajo la
+  Licencia Pública General de GNU, versión 3 o posterior (GPL-3.0-or-later). El texto está en
+  `LICENSE` y el código es público en https://github.com/nestorfelipe00/bim-simple.
+  - Se puede vender o regalar. Toda versión que se entregue DEBE ir con el texto de la GPL,
+    el aviso en "Acerca de" y el enlace a su código fuente.
+  - NUNCA se copia código de terceros con licencia GPL o AGPL: Blender, Bonsai, Chili3D,
     xeokit, Sweet Home 3D y similares. Se puede estudiar cómo se comportan, pero no copiar
     su código ni su estructura.
   - El código con licencias permisivas (MIT, BSD, Apache), como Pascal Editor, Three.js o
@@ -91,12 +95,16 @@ confirmar cada avance sin leer el código.
   - IfcOpenShell (LGPL) se distribuye como carpeta separada y sin modificar, con sus textos de
     licencia y un aviso en "Acerca de", y el usuario debe poder reemplazarlo. Si alguna vez se
     modifica, esos cambios se publican bajo LGPL.
-  - Se usa el núcleo geométrico OpenCASCADE de IfcOpenShell. Antes de la primera venta se DEBE
-    aclarar si sus binarios incluyen partes GPL de CGAL.
-- Toda dependencia nueva DEBE tener su licencia revisada y anotada en el plan antes de usarla.
+  - Se usa el núcleo geométrico OpenCASCADE de IfcOpenShell. Antes de distribuir el programa se
+    DEBEN incluir los avisos de las bibliotecas que trae IfcOpenShell (OpenCASCADE, CGAL, Boost,
+    manifold).
+- Toda dependencia nueva DEBE tener una licencia compatible con la GPL-3.0, revisada y anotada
+  en el plan antes de usarla.
 
-**Por qué:** una sola copia de código GPL obligaría a publicar todo BIM Simple. Revisar cada
-licencia al entrar es mucho más barato que limpiar el producto después.
+**Por qué:** el usuario decidió que BIM Simple sea libre y público, como Blender (2026-10-11).
+Si todo el código propio es de un solo autor, el autor conserva la opción de cambiar la licencia
+más adelante o de ofrecer licencias comerciales aparte; por eso no se copia código GPL de otros.
+Revisar cada licencia al entrar es mucho más barato que limpiar el producto después.
 
 ## Restricciones técnicas
 
@@ -156,4 +164,4 @@ licencia al entrar es mucho más barato que limpiar el producto después.
     `specs/001-espacio-trabajo-pisos/investigacion/`) sirve como referencia del
     comportamiento IFC. Su código de Bonsai NO se reutiliza (Principio VI).
 
-**Versión**: 3.0.1 | **Ratificada**: 2026-10-11 | **Última enmienda**: 2026-10-11
+**Versión**: 4.0.0 | **Ratificada**: 2026-10-11 | **Última enmienda**: 2026-10-11

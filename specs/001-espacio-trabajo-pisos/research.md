@@ -199,7 +199,7 @@ instaló nada.
     ni `%APPDATA%\BIM Simple`, ni `%LOCALAPPDATA%\bim-simple-updater`, ni los accesos directos, ni
     la entrada del registro (**SC-005** ✅).
 
-- **Pendientes antes de vender** (T053, anotados al cerrar la función 001):
+- **Pendientes antes de entregar el programa a otros** (T053, anotados al cerrar la función 001):
   1. **Prueba en una PC limpia** (Windows Sandbox o una máquina virtual) para confirmar que el
      programa arranca sin un `MSVCP140.dll` del sistema. Activar Windows Sandbox lo hace el usuario,
      porque pide administrador.
@@ -208,9 +208,9 @@ instaló nada.
      trae, además del núcleo OpenCASCADE (`TK*.dll`, LGPL-2.1 con excepción) que usa BIM Simple, los
      núcleos `ifcopenshell_geometry_kernel_cgal.dll` y `..._cgalsimple.dll` (CGAL tiene partes
      GPL-3.0), `manifold.dll` (Apache-2.0) y DLL de Boost (BSL-1.0). Su `dist-info` no trae ningún
-     texto de licencia. Hay que decidir si se quitan los núcleos CGAL del instalador (sin modificar
-     IfcOpenShell: solo no se copian esos archivos, si el motor arranca sin ellos) o se consulta a
-     un abogado, y agregar los textos de OpenCASCADE, Boost y manifold a `licencias/`.
+     texto de licencia. Desde que BIM Simple es GPL-3.0-or-later (R11), las partes GPL de CGAL son
+     compatibles con el programa; falta agregar a `licencias/` los textos de CGAL, OpenCASCADE,
+     Boost y manifold.
   4. **GEOS** (LGPL-2.1) viene dentro de shapely (`shapely.libs\geos*.dll`): es una DLL aparte y
      reemplazable, y su texto ya está en `licencias/python-paquetes/shapely-2.2.0/LICENSE_GEOS`.
 
@@ -231,23 +231,27 @@ Detalle completo:
 | isodate, lark, pyparsing, python-dateutil, six, typing_extensions | ver `METADATA` | BSD / MIT / Apache-2.0 / PSF | IfcOpenShell |
 | pytest (+ iniconfig, pluggy, packaging, Pygments, colorama) | 9.1.1 | MIT / BSD / Apache-2.0 | validación EXPRESS y pruebas |
 
-Todas son permisivas, salvo IfcOpenShell (LGPL), que se usa como permite la constitución. Queda
-pendiente, antes de la primera venta, aclarar CGAL dentro de los binarios de IfcOpenShell
-(constitución, Principio VI).
+Todas son permisivas, salvo IfcOpenShell (LGPL), que se usa como permite la constitución. Todas
+son compatibles con la GPL-3.0-or-later de BIM Simple (R11). Falta agregar los textos de las
+bibliotecas que trae IfcOpenShell (R9, pendiente 3).
 
-### R11. Repositorio público con licencia GPL ⚠️ (bloqueo antes de subir nada)
+### R11. Repositorio público con licencia GPL ✅ (resuelto por el usuario, 2026-10-11)
 - **Hallazgo** ✅:
   - `gh api repos/nestorfelipe00/bim-simple` devuelve **`visibility: public`**, con licencia
     detectada GPL-3.0.
   - El archivo `LICENSE` del repositorio es el texto de la GPL-3.0 que se puso para el MVP.
   - En GitHub solo está el commit inicial del MVP; los 12 commits posteriores están **solo en esta
     computadora** (`git rev-list origin/main..main` = 12).
-- **Decisión**: **no subir nada** a GitHub hasta que el usuario:
-  1. haga privado el repositorio (o elija otro privado);
-  2. apruebe reemplazar `LICENSE` por un aviso de "todos los derechos reservados".
-
-  Las dos cosas las hace o autoriza el usuario: es un cambio en su cuenta y una decisión legal. El
-  MVP que ya está publicado sigue bajo GPL; era una extensión de Blender y no se reutiliza.
+- **Decisión del plan**: no subir nada a GitHub hasta que el usuario decidiera la visibilidad del
+  repositorio y la licencia, porque el plan suponía un programa cerrado.
+- **Decisión del usuario** (T056, 2026-10-11): "Repositorio público y licencia similar a blender".
+  - El repositorio sigue **público**.
+  - BIM Simple es **GPL-3.0-or-later**, como Blender. `LICENSE` ya tiene el texto oficial de la
+    GPL-3.0 (SHA-256 `3972DC97…6986`) y se conserva.
+  - Constitución 4.0.0, Principio VI: el aviso va en "Acerca de", el texto en
+    `licencias/bim-simple/GPL-3.0.txt` del instalador y el enlace al código en ambos. Se sigue sin
+    copiar código GPL de otros (Blender, Bonsai), para que el autor conserve la opción de cambiar
+    la licencia más adelante.
 
 ### R12. Pruebas (Principio V)
 - **Motor**: `pytest` corriendo con el Python del programa (`runtime/python`). Los IFC de prueba se

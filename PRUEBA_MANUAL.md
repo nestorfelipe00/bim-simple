@@ -20,7 +20,8 @@ Es la parte B de la [guía de validación](specs/001-espacio-trabajo-pisos/quick
 - [ ] La ventana y la barra de tareas muestran el icono de BIM Simple y el título "BIM Simple".
 - [ ] Arriba solo están los menús **Archivo**, **Edición** y **Ayuda**.
 - [ ] A la izquierda está la **planta**, al centro la **vista 3D** y a la derecha el panel **BIM Simple**.
-- [ ] **Ayuda > Acerca de BIM Simple** muestra la versión, las licencias (IfcOpenShell bajo LGPL-3.0, con el
+- [ ] **Ayuda > Acerca de BIM Simple** muestra la versión, que BIM Simple es software libre bajo la GPL-3.0 o
+  posterior (con el enlace a su código), las licencias de las librerías (IfcOpenShell bajo LGPL-3.0, con el
   enlace a su código) y dónde están los textos de las licencias.
 
 ## 2. Proyecto

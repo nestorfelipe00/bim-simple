@@ -38,11 +38,11 @@ pruebas automáticas en verde y un commit.
 - **APIs**: NUNCA inventar funciones ni opciones de IfcOpenShell, Electron, Three.js ni camera-controls. Usar las
   verificadas en research.md o en el prototipo; si hace falta una nueva, verificarla antes en el código instalado o
   en la documentación oficial y anotarla en research.md (Principio IV).
-- **Licencias**: NUNCA copiar código GPL o AGPL (Bonsai, Blender). Toda dependencia nueva necesita permiso y revisar
-  su licencia (Principio VI).
+- **Licencias**: BIM Simple es GPL-3.0-or-later (T056). NUNCA copiar código GPL o AGPL de otros (Bonsai, Blender).
+  Toda dependencia nueva necesita permiso y una licencia compatible con la GPL-3.0 (Principio VI).
 - **Idiomas**: textos visibles en español, exactamente como en los contratos. Código, órdenes y campos en inglés.
 - **Ventanas**: las pruebas corren con la ventana oculta. Abrir la ventana visible es un ⛔ PERMISO.
-- **Commits**: `git commit -F <archivo>`. **No subir nada a GitHub** (`git push`) hasta resolver T056.
+- **Commits**: `git commit -F <archivo>`. **No subir nada a GitHub** (`git push`) sin permiso del usuario (T056).
 - **Errores**: si el mismo error sigue después de 3 correcciones, detenerse y mostrarlo junto con lo que se probó.
 
 ---
@@ -511,13 +511,19 @@ sus elementos y el 3D muestra todos.
     ("Todos los derechos reservados", pendiente de T056).
 - [X] T055 [P] Reescribir `PRUEBA_MANUAL.md` como la lista de prueba manual para el usuario: la parte B de
   [quickstart.md](quickstart.md) en lenguaje simple y con casillas.
-- [ ] T056 ⛔ BLOQUEO R11 (decisión del usuario): **antes de cualquier `git push`**, el usuario tiene que:
+- [X] T056 ⛔ BLOQUEO R11 (decisión del usuario): **antes de cualquier `git push`**, el usuario tiene que:
   1. hacer privado el repositorio `nestorfelipe00/bim-simple`, él mismo o autorizando
      `gh repo edit nestorfelipe00/bim-simple --visibility private --accept-visibility-change-consequences`;
   2. aprobar el reemplazo de `LICENSE` por el aviso "Copyright (c) 2026 Nestor Torres. Todos los derechos
      reservados."
 
   Solo después, y con permiso, se suben los commits.
+
+  **Resuelto (2026-10-11)**: el usuario decidió "Repositorio público y licencia similar a blender". El repositorio
+  sigue público y BIM Simple pasa a GPL-3.0-or-later; `LICENSE` se conserva. Se cambiaron la constitución (4.0.0,
+  Principio VI), "Acerca de" (con su paso en la prueba del programa), `LEEME-licencias.txt` y
+  `licencias/bim-simple/GPL-3.0.txt`, `package.json`, README y research R11. Subir los commits sigue pidiendo
+  permiso.
 - [ ] T057 Marcar la especificación como implementada (`**Estado**: Implementada` en [spec.md](spec.md)), comprobar
   que todas las tareas de este archivo están marcadas y hacer el commit final con los resultados de T052.
 

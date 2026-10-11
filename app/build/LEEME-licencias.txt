@@ -1,7 +1,12 @@
-BIM Simple: licencias de los componentes de terceros
-=====================================================
+BIM Simple: licencias
+=====================
 
-BIM Simple es un programa cerrado: Copyright (c) 2026 Nestor Torres. Todos los derechos reservados.
+BIM Simple es software libre: Copyright (c) 2026 Nestor Torres.
+Se puede usar, copiar, modificar y redistribuir bajo la Licencia Pública General de GNU, versión 3 o
+posterior (GPL-3.0-or-later). Se entrega SIN NINGUNA GARANTÍA. Texto completo:
+  licencias/bim-simple/GPL-3.0.txt
+Código fuente: https://github.com/nestorfelipe00/bim-simple
+
 Usa los componentes de abajo, cada uno con su licencia. Los textos están en la carpeta «licencias».
 
 IfcOpenShell 0.9.0 (LGPL-3.0)

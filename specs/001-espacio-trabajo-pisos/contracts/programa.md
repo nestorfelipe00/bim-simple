@@ -25,7 +25,7 @@ la lista manual comprueban lo que este contrato fija.
 │   ├── python\                    Python 3.14.7 embebible + Lib\site-packages (IfcOpenShell en su carpeta, sin modificar)
 │   └── engine\bimsimple_engine\   motor BIM
 ├── LICENSES.chromium.html         (de Electron)
-└── licencias\                     textos de licencia: LGPL-3.0 y GPL-3.0 (para IfcOpenShell), MIT de Electron, Three.js y camera-controls, PSF de Python y las de las dependencias
+└── licencias\                     textos de licencia: GPL-3.0 de BIM Simple, LGPL-3.0 y GPL-3.0 (para IfcOpenShell), MIT de Electron, Three.js y camera-controls, PSF de Python y las de las dependencias
 ```
 
 ## Datos del usuario
@@ -46,11 +46,12 @@ la lista manual comprueban lo que este contrato fija.
 
 ## Licencias en el programa (Principio VI)
 
-- **"Ayuda > Acerca de BIM Simple"** (texto exacto en [ui.md](ui.md)) indica que el programa usa
-  IfcOpenShell bajo LGPL-3.0, dónde está su código fuente y que los textos de las licencias están en
-  `licencias\`.
+- **"Ayuda > Acerca de BIM Simple"** (texto exacto en [ui.md](ui.md)) indica que BIM Simple es
+  software libre bajo GPL-3.0-or-later con el enlace a su código, que usa IfcOpenShell bajo
+  LGPL-3.0, dónde está el código de IfcOpenShell y que los textos de las licencias están en
+  `licencias\` (el de BIM Simple, en `licencias\bim-simple\GPL-3.0.txt`).
 - IfcOpenShell se distribuye sin modificar, en su propia carpeta y reemplazable.
-- Antes de la **primera venta**, el programa NO se distribuye sin:
-  1. aclarar CGAL dentro de los binarios de IfcOpenShell;
+- Antes de **entregar el programa a otros**, el programa NO se distribuye sin:
+  1. los textos de licencia de CGAL, OpenCASCADE, Boost y manifold, que vienen dentro de IfcOpenShell;
   2. la firma de código (research R9, riesgo 2);
   3. la prueba en una PC limpia (research R9, riesgo 1).
