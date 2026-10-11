@@ -2,68 +2,61 @@
 
 **Carpeta**: `specs/001-espacio-trabajo-pisos` (sin rama propia; se trabaja en `main`) | **Fecha**: 2026-10-11 | **Especificación**: [spec.md](spec.md)
 
-**Entrada**: especificación de la función en `specs/001-espacio-trabajo-pisos/spec.md`; constitución v2.0.0.
+**Entrada**: especificación revisada para la constitución v3.0.0. Este plan **reemplaza** al anterior, que
+estaba hecho para Blender. La investigación de Blender queda como referencia histórica en
+[investigacion/](investigacion/).
 
 ## Resumen
 
-BIM Simple pasa a ser un programa propio para Windows. Funciona así:
-- Lleva una **copia sin modificar de Blender 5.2** en modo portable, con su configuración dentro de la
-  carpeta del programa.
-- Le agrega **Bonsai 0.9.0 py313**, la **extensión BIM Simple** y una **plantilla de aplicación** que lo hace
-  arrancar directamente en la pantalla de BIM Simple, en español y sin bienvenida.
-- Se instala en `%LOCALAPPDATA%\Programs\BIM Simple\` y se abre con un acceso directo propio.
+BIM Simple se construye como un **programa propio para Windows** con tres piezas (constitución, Principio III):
+- **Ventana**: Electron. Título, menús Archivo y Edición, diálogos de Windows y pregunta al cerrar.
+- **Interfaz**: Three.js. Planta del piso activo y 3D lado a lado, navegación al estilo
+  ArchiCAD/Revit con `camera-controls`, y el panel "BIM Simple" con el navegador de pisos.
+- **Motor BIM**: Python embebido con IfcOpenShell, como proceso aparte. Es dueño del IFC, aplica
+  las reglas de pisos, deshace con transacciones y devuelve las formas 3D.
 
-Al arrancar, la extensión arma en la ventana real la pantalla partida: planta del piso activo a la izquierda
-y 3D a la derecha. Oculta la interfaz de Blender y Bonsai y deja solo:
-- un menú "Archivo" propio;
-- el panel "BIM Simple" con el navegador de pisos.
-
-Toda la lógica de proyecto y pisos vive en `core.py` y usa recetas verificadas de Bonsai/IfcOpenShell.
-Algunas corrigen al MVP: mover un piso mueve también sus elementos, y borrar un piso no deja elementos
-huérfanos. Las llamadas internas de Bonsai están concentradas en `bonsai_api.py`. La prueba automática usa
-las mismas funciones con el Blender del programa en segundo plano. Lo que solo se ve con ventana va a la
-prueba manual.
-
-La justificación de cada decisión está en [research.md](research.md), con la evidencia en
-[investigacion/](investigacion/).
+La interfaz manda órdenes JSON y el motor responde con el estado y las mallas. Todo se apoya en el
+prototipo validado (muro ~30 ms, deshacer ~25 ms, IFC válido, título, X y doble clic) y en
+verificaciones nuevas de las operaciones de pisos con la API LGPL. Se entrega con un instalador por
+usuario, sin administrador.
 
 ## Contexto técnico
 
 **Lenguaje/versión**:
-- Python 3.13, el que trae Blender 5.2.
-- PowerShell 5.1, para el script de armado.
+- JavaScript (ES2022, módulos) en la ventana y la interfaz.
+- Python 3.14.7 en el motor.
+- PowerShell 5.1 en los scripts de preparación.
 
-**Dependencias principales**:
-- Blender 5.2.0 LTS (copia de `C:\Program Files\Blender Foundation\Blender 5.2`, sin `blender.pdb`).
-- Bonsai 0.9.0 `py313` para windows-x64, que incluye IfcOpenShell 0.9.0.
-- Sin dependencias pip nuevas. Solo la biblioteca estándar de Python, para el icono.
+**Dependencias principales** (versiones fijas; licencias en [research.md](research.md) R10):
+- Electron 44.4.5, Three.js 0.186.1, camera-controls 3.1.2.
+- Python embebible 3.14.7, IfcOpenShell 0.9.0 (con numpy, shapely y demás) y pytest 9.1.1.
+- Para el instalador: electron-builder 26.17.0 (MIT).
 
-**Almacenamiento**:
-- Archivos `.ifc` (IFC4, metros) elegidos por el usuario.
-- Configuración del programa en `<programa>\blender\portable\`.
-- `.blend` de sesión oculto en `portable\temp\`.
+**Almacenamiento**: archivos `.ifc` (IFC4, metros) que elige el usuario. No hay base de datos ni
+formato propio.
 
 **Pruebas**:
-- Automáticas: `"<programa>\blender\blender.exe" --background --app-template bim_simple --python tests\test_pisos.py`.
-  Sale con código distinto de 0 si algo falla y valida el IFC con `ifcopenshell.validate`.
-- Manuales en español: [quickstart.md](quickstart.md), parte B.
+- `pytest` del motor sin interfaz.
+- Prueba del programa con la ventana oculta (`npm --prefix app test`).
+- Lista manual de [quickstart.md](quickstart.md).
 
-**Plataforma**: Windows 11 x64, sin permisos de administrador.
+**Plataforma**: Windows 11 x64, instalación por usuario, sin conexión a Internet.
 
-**Tipo de proyecto**: programa de escritorio construido sobre Blender, con su extensión, su plantilla y
-su script de armado.
+**Tipo de proyecto**: aplicación de escritorio (Electron) con un motor local en Python.
 
 **Objetivos de rendimiento**:
-- Arranque en menos de 20 s (SC-007). En segundo plano se midieron 5,8–7,1 s.
-- Activar un piso en menos de 1 s con 10 pisos (SC-004).
+- Cada acción del navegador se ve en pantalla en menos de 0,2 s con 10 pisos (SC-004); el prototipo
+  hizo unos 30 ms.
+- Arranque en menos de 10 s (SC-007); el motor estuvo listo en ~0,4 s.
 
 **Restricciones**:
-- Ruta del programa corta (base de 90 caracteres o menos) y escribible.
-- Aproximadamente 1,5 GB en disco.
-- Sin conexión a Internet una vez armado.
-- El Blender del usuario no se toca (SC-005).
+- Versiones fijas, publicadas hace dos semanas o más.
+- Sin código GPL o AGPL.
+- IfcOpenShell en una carpeta separada y reemplazable.
+- Unos 640 MB instalado.
+- Rutas cortas (la carpeta del proyecto tiene 36 caracteres).
 
-**Escala**: un usuario y un edificio por proyecto, entre 1 y ~30 pisos. Es la primera de tres funciones.
+**Escala**: un usuario, un edificio por proyecto, de 1 a unos 30 pisos y modelos de casas o edificios medianos.
 
 ## Control de la constitución
 
@@ -71,17 +64,17 @@ su script de armado.
 
 | Principio / regla | Cómo lo cumple este plan | Estado |
 |---|---|---|
-| I. IFC real siempre | Cada piso es un `IfcBuildingStorey` creado por Bonsai (`bim.add_part_to_object`). Borrar un piso borra su contenido: no quedan huérfanos, a diferencia de `delete_container` solo. Mover un piso mueve sus elementos en el IFC y en Blender. La prueba valida IFC4 con reglas EXPRESS. | ✅ |
-| II. Pensado para quien viene de ArchiCAD | Interfaz y diálogos en español (idioma `es` del programa y textos propios). Altura de piso como en ArchiCAD (FR-016). Las diferencias que Blender impone están escritas (research.md §E, D1–D7). | ✅ con diferencias documentadas |
-| III. Programa propio sobre Blender | Copia portable con configuración propia, plantilla y acceso directo. No se modifica ningún archivo de Blender ni de Bonsai. Los reemplazos de dibujo, paneles y atajos son en tiempo de ejecución, dentro de la copia del programa. El Blender del usuario no se lee ni se escribe: se comprueba con hashes antes y después (SC-005). Única excepción: la caché compartida (D7), que no es preferencia, extensión ni archivo de inicio. | ✅ |
-| IV. API verificada | Cada llamada está citada con archivo:línea en research.md e `investigacion/`. Las 13 llamadas internas de Bonsai solo aparecen en `bim_simple/bonsai_api.py`. | ✅ |
-| V. Lógica separada y comprobada | `core.py` no importa nada de interfaz, y la prueba usa esas mismas funciones. Lo visual (pantalla, colecciones locales, X, Ctrl+Z real, barra de tareas) va a la prueba manual. | ✅ |
-| Restricciones técnicas | Blender 5.2 + Bonsai 0.9.0 py313. IFC4 en metros. Licencias incluidas. Sin pip. Sin archivos ni abstracciones extra (ver estructura). | ✅ |
-| Flujo de trabajo: permisos | La implementación se detiene a pedir permiso antes de: descargar Bonsai, instalar el programa en `%LOCALAPPDATA%`, abrir ventanas de Blender, crear accesos directos y borrar archivos. Lista en "Pasos que requieren permiso". | ✅ |
+| I. IFC real siempre | El motor crea los pisos con `ifcopenshell.api`. Lo que se ve son mallas teseladas del IFC. Cada archivo guardado se valida (IFC4 + EXPRESS) en un proceso aparte; la prueba exige 0 errores. La apertura en otro programa BIM está en la prueba manual. | ✅ |
+| II. Pensado para quien viene de ArchiCAD | Español en todo. Doble clic para activar, título propio, pregunta al cerrar y navegación aprobada. Sin diferencias pendientes con la especificación. | ✅ |
+| III. Programa propio de escritorio | Las tres piezas, comunicadas solo por órdenes JSON ([core_api.md](contracts/core_api.md)). La interfaz no toca el IFC. Nada de Blender ni Bonsai. | ✅ |
+| IV. API verificada | Funciones de IfcOpenShell comprobadas con su firma y su salida real (research R4-R6). APIs de Electron y Three.js usadas en el prototipo o citadas en su documentación oficial. | ✅ |
+| V. Lógica separada y comprobada | Las reglas viven en el motor (`engine/`). Hay prueba del motor sin interfaz, prueba del programa con la ventana oculta y lista manual. | ✅ |
+| VI. Licencia y propiedad del código | Todas las dependencias revisadas (R10): permisivas, salvo IfcOpenShell (LGPL, carpeta aparte). No se copia código de Bonsai. **Bloqueo R11**: el repositorio de GitHub es público con licencia GPL; no se sube nada hasta que el usuario lo resuelva. **Pendiente antes de vender**: CGAL. | ✅ con bloqueo anotado |
+| Restricciones técnicas | Versiones fijas de la constitución. Instalación por usuario. No toca otras instalaciones. | ✅ |
+| Flujo de trabajo: permisos | Hay que pedir permiso para: descargar dependencias si no se reutilizan las del prototipo, instalar el programa, crear accesos directos (los crea el instalador), abrir ventanas, borrar archivos obsoletos y cambiar el repositorio y su licencia. Lista en "Pasos que requieren permiso". | ✅ |
 
-**Resultado**: pasa. No hay violaciones que justificar. Revisión después del diseño: sigue pasando; el
-diseño de [data-model.md](data-model.md) y [contracts/](contracts/) no agrega dependencias ni toca nada fuera
-de la carpeta del programa.
+**Resultado**: pasa. Revisión después del diseño: sigue pasando. El protocolo, el modelo de datos y
+los contratos no agregan dependencias ni tocan nada fuera de la carpeta del programa.
 
 ## Estructura del proyecto
 
@@ -89,186 +82,138 @@ de la carpeta del programa.
 
 ```text
 specs/001-espacio-trabajo-pisos/
-├── spec.md              especificación
+├── spec.md              especificación (revisada para v3.0.0)
 ├── plan.md              este archivo
-├── research.md          decisiones de la fase 0
-├── investigacion/       evidencia detallada (informes y scripts verificados)
-├── data-model.md        fase 1: entidades, reglas y estados
-├── quickstart.md        fase 1: cómo armar, probar y la prueba manual
-├── contracts/           fase 1: programa, interfaz y funciones de core.py
+├── research.md          decisiones de la fase 0 (reemplaza a la de Blender)
+├── data-model.md        entidades, reglas y estados
+├── quickstart.md        cómo probar (automático y manual)
+├── contracts/
+│   ├── core_api.md      protocolo del motor (órdenes JSON)
+│   ├── ui.md            ventana, menús, pantalla, navegación
+│   └── programa.md      instalación, carpetas, accesos directos, licencias
+├── investigacion/       referencia histórica (Blender)
 ├── checklists/requirements.md
-└── tasks.md             fase 2 (/speckit-tasks; no lo crea este comando)
+└── tasks.md             fase 2 (/speckit-tasks)
 ```
 
 ### Código fuente (raíz del repositorio)
 
 ```text
-bim_simple/                    extensión de Blender (blender_manifest.toml, id "bim_simple")
-├── blender_manifest.toml      Blender ≥ 5.2.0, GPL-3.0-or-later
-├── __init__.py                registrar / desregistrar módulos, timers y manejadores
-├── bonsai_api.py              ÚNICO módulo que importa bonsai.* o llama bpy.ops.bim.* (Principio IV)
-├── core.py                    lógica sin interfaz: proyecto (nuevo/abrir/guardar/cerrar) y pisos
-├── props.py                   propiedades de escena: lista espejo de pisos, índice activo, avisos
-├── operators.py               operadores bimsimple.* (los que cambian el IFC heredan de tool.Ifc.Operator vía bonsai_api)
-├── ui.py                      menú Archivo, lista y panel "BIM Simple"
-├── screen.py                  ensure_layout, barra superior, ocultar paneles, planta, colecciones locales
-├── keymaps.py                 política de atajos y atajos propios
-└── session.py                 .blend de sesión, puente save_pre (X2), recuperación
+app/                              programa Electron (ventana + interfaz)
+├── package.json                  versiones fijas; scripts start / test / dist; configuración de electron-builder
+├── package-lock.json
+├── src/
+│   ├── main/
+│   │   ├── main.js               ventana, título, menús, diálogos, cierre con pregunta
+│   │   ├── engine.js             lanza el motor, órdenes con id, rechaza pendientes y reinicia si se cae
+│   │   └── validator.js          valida el IFC guardado en un proceso aparte
+│   ├── preload.js                puente seguro (contextBridge)
+│   └── renderer/
+│       ├── index.html, styles.css
+│       ├── app.js                arranque, estado, órdenes, mensajes
+│       ├── viewports.js          escena, planta + 3D, cámaras, navegación, encuadrar
+│       ├── meshes.js             mallas del motor agrupadas por piso
+│       └── storey-panel.js       panel: proyecto, navegador, botones, diálogo Editar piso
+├── test/window-test.js           prueba del programa con la ventana oculta
+└── build/icon.ico                icono (lo genera tools/make_icon.py)
 
-app_template/bim_simple/
-└── __init__.py                plantilla de aplicación (register/unregister vacíos)
-
-assets/
-├── bim_simple.ico             icono del acceso directo (generado por tools/make_icon.py)
-└── LEEME.txt                  qué es, cómo abrir y cómo desinstalar (se copia al programa)
+engine/                           motor BIM (Python)
+├── requirements.txt              dependencias con versiones exactas
+├── bimsimple_engine/
+│   ├── __main__.py               bucle del protocolo (stdin/stdout)
+│   ├── commands.py               tabla de órdenes, errores en español
+│   ├── project.py                nuevo, abrir, guardar, validar, estado
+│   ├── storeys.py                listar, agregar, editar, contar, borrar, activar
+│   └── geometry.py               teselado a mallas (iterador)
+└── tests/
+    ├── conftest.py               IFC de prueba generados en carpetas temporales
+    └── test_engine.py            prueba del motor
 
 tools/
-├── armar_programa.ps1         arma o actualiza el programa en %LOCALAPPDATA%\Programs\BIM Simple
-├── configurar_programa.py     corre dentro del Blender del programa: preferencias, userpref y startup.blend de la plantilla
-└── make_icon.py               genera assets/bim_simple.ico (biblioteca estándar)
+├── setup-dev.ps1                 arma runtime/python (desde el prototipo o descargando, con permiso) y app/node_modules
+└── make_icon.py                  genera app/build/icon.ico (biblioteca estándar)
 
-tests/
-└── test_pisos.py              prueba automática (blender --background), sale con 1 si falla
+runtime/                          (fuera de git) Python embebible + IfcOpenShell para desarrollo y empaquetado
 ```
 
-Fuera de git (en `.gitignore`): `dist/` (zip de la extensión que arma el script) y `__pycache__/`.
+Fuera de git (en `.gitignore`): `runtime/`, `app/node_modules/`, `app/dist/`, `app/test-output/` y `__pycache__/`.
 
 **Decisión de estructura**:
-- Una sola extensión con módulos separados por responsabilidad: datos de Bonsai (`bonsai_api`), lógica
-  (`core`), estado de interfaz (`props`), acciones (`operators`), dibujo (`ui`), pantalla (`screen`), teclado
-  (`keymaps`) y cierre (`session`). Es lo mínimo para cumplir los Principios IV y V sin mezclar la lógica con
-  la interfaz.
-- La plantilla y las herramientas de armado van aparte porque se copian a la carpeta del programa, no a la
-  extensión.
+- Dos carpetas de nivel superior, `app/` y `engine/`, que reflejan las dos piezas que se
+  comunican por el protocolo. La ventana y la interfaz comparten `app/` porque las empaqueta Electron.
+- El motor es un paquete de Python que se ejecuta con `python -m bimsimple_engine`.
+- El código anterior basado en Blender ya no existe en el árbol (se borró en `feae67c`).
+- El prototipo queda en `docs/` como referencia y no se importa: se reescribe ordenado, con nombres
+  en inglés (constitución, Principio II).
 
-**Archivos que quedan del MVP**:
-- `PLAN.md` se conserva como referencia de la API de Bonsai.
-- `PRUEBA_MANUAL.md` y `README.md` describen el MVP; se **reescriben** al final de esta función para el
-  programa nuevo. No se borran.
+**Archivos obsoletos por el cambio de base** (borrarlos requiere permiso):
+- `specs/001-espacio-trabajo-pisos/contracts/programa.md` se **reescribe** con el contrato nuevo.
+- `PLAN.md`, `PRUEBA_MANUAL.md` y `README.md` describen el MVP sobre Blender. `README.md` y
+  `PRUEBA_MANUAL.md` se reescriben al final de la función. `PLAN.md` queda como referencia histórica,
+  salvo que el usuario prefiera borrarlo.
+- `LICENSE` (GPL-3.0): se reemplaza solo con aprobación del usuario (research R11).
 
 ## Diseño técnico por pieza
 
-### Armado del programa (`tools/armar_programa.ps1`)
+### Motor (`engine/`)
+- Implementa el protocolo de [core_api.md](contracts/core_api.md) con las recetas verificadas en
+  research R4-R6.
+- Mantiene el `file` de IfcOpenShell, la ruta, la bandera de cambios y el piso activo.
+- Cada orden que cambia el IFC se envuelve en `begin_transaction` / `end_transaction`, y en caso
+  de error, `discard_transaction`.
+- Las reglas FR-012 a FR-021 viven en `storeys.py`, tal como están en [data-model.md](data-model.md) §3-4.
+- Las mallas se calculan con `ifcopenshell.geom` (núcleo OpenCASCADE): `create_shape` para pocos
+  elementos y `iterator` para todos.
 
-Parámetros:
-- `-Destino`: por defecto `%LOCALAPPDATA%\Programs\BIM Simple`;
-- `-BonsaiZip`: ruta del zip py313;
-- `-SoloExtension`: reinstala solo la extensión y la plantilla;
-- `-CrearAccesos`: crea los accesos directos.
+### Ventana (`app/src/main/`)
+- **Ventana**: 1400 × 860, `backgroundColor`, y las opciones de seguridad de research R2. El menú en
+  español sale de una plantilla con los atajos de [ui.md](contracts/ui.md).
+- **Cierre**: `close` con `preventDefault` mientras haya cambios. Después, `dialog.showMessageBox`
+  con Guardar / No guardar / Cancelar. "Salir" del menú pasa por el mismo camino.
+- **`engine.js`**:
+  - lanza el motor (desarrollo: `runtime/python/python.exe`; instalado: `process.resourcesPath`, R9);
+  - asocia cada respuesta a su orden por `id`;
+  - registra stderr en un archivo de log de la carpeta de datos del usuario;
+  - si el motor termina inesperadamente, avisa y lo reinicia.
+- **`validator.js`**: después de cada guardado, lanza un segundo Python con `validate_file` y manda el
+  resultado a la página.
 
-Cada paso imprime su resultado y el script se detiene ante el primer error.
+### Interfaz (`app/src/renderer/`)
+- `viewports.js`: el código del prototipo, ordenado (research R7). Los grupos por piso se muestran
+  u ocultan en cada dibujo de la planta.
+- `storey-panel.js`: la tabla con clic y doble clic, los botones con su estado activo o inactivo y
+  el diálogo "Editar piso" (research R8).
+- `app.js`: un solo punto que manda las órdenes. Con cada respuesta reemplaza el estado y pide las
+  mallas que cambiaron (`changed_ids`/`deleted_ids`) o todas (nuevo, abrir, deshacer, rehacer).
 
-1. **Requisitos**:
-   - `blender.exe --version` del Blender instalado = 5.2.0;
-   - el SHA-256 del zip de Bonsai coincide con el publicado;
-   - el largo de la ruta de destino es de 90 caracteres o menos.
-2. **SC-005**: hash SHA-256 de `%APPDATA%\Blender Foundation\Blender\5.2\config\*` y de
-   `extensions\user_default` del usuario, antes de empezar.
-3. **Copia de Blender**:
-   - `robocopy "<BL>" "<destino>\blender" /E /XF blender.pdb`;
-   - crear `blender\portable\` y `blender\portable\temp\`.
-4. **Bonsai**: `blender\blender.exe -c extension install-file -r user_default -e <zip>`.
-5. **Extensión BIM Simple**:
-   - `blender\blender.exe -c extension build --source-dir bim_simple --output-dir dist`;
-   - `blender\blender.exe -c extension install-file -r user_default -e dist\bim_simple-<v>.zip`.
-6. **Plantilla**: copiar `app_template\bim_simple` a `portable\scripts\startup\bl_app_templates_user\`.
-7. **Configuración**: ejecutar `blender\blender.exe --background --python tools\configurar_programa.py -- principal` y
-   después `… --app-template bim_simple --python tools\configurar_programa.py -- plantilla`. Preferencias
-   según research R5; genera el `startup.blend` de datos de la plantilla.
-8. **Archivos propios**: copiar `assets\bim_simple.ico` y `assets\LEEME.txt`; crear `licencias\` con la
-   GPL-3.0 de `blender\license\` y los avisos de Blender, Bonsai e IfcOpenShell.
-9. **Prueba automática** (`tests\test_pisos.py`) con el Blender del programa; mostrar su salida.
-10. **SC-005**: volver a calcular los hashes del paso 2 y mostrar "sin cambios" o la lista de diferencias.
-11. **Solo con `-CrearAccesos`**: `BIM Simple.lnk` en el Escritorio y en el menú Inicio (research R6).
+### Instalador
+Ver research R9 y [programa.md](contracts/programa.md). `npm --prefix app run dist` arma el instalador
+con el Python embebido y el motor como recursos extra, fuera del asar.
 
-`-SoloExtension` hace solo los pasos 5, 6, 7 (parte plantilla), 9 y 10.
-
-### Extensión
-
-- **`bonsai_api.py`**: expone las 13 llamadas internas listadas en `investigacion/ifc.md` §10 y los
-  operadores `bim.create_project`, `bim.add_part_to_object`, `bim.load_project` y `bim.save_project`, más la
-  base `IfcOperator = tool.Ifc.Operator`. Ningún otro módulo importa `bonsai`.
-- **`core.py`**: contrato en [contracts/core_api.md](contracts/core_api.md). Cada función recibe valores en
-  metros y convierte con `unit_scale` del archivo. Si una regla no se cumple (FR-016, último piso, nombre
-  vacío), lanza `BIMSimpleError` con el mensaje en español.
-- **`props.py`**:
-  - `BIMSimpleStorey` (`ifc_id`, `name`, `elevation`, `height`).
-  - `BIMSimpleProperties` en `Scene`: `storeys`, `active_storey_index` con `update` que llama a
-    `core.activate_storey` y a `screen.show_storey_in_plan`, y `notice` para los avisos.
-  - `refresh_storeys()` vuelve a llenar la lista desde el IFC. Se llama después de cada operador, en
-    `load_post` y en `undo_post`/`redo_post`.
-- **`operators.py`**:
-  - Proyecto: `bimsimple.new_project`, `open_ifc`, `save_ifc`, `save_ifc_as`, `quit`.
-  - Pisos: `add_storey_above`, `add_storey_below`, `edit_storey` (diálogo con nombre, cota y altura),
-    `delete_storey` (confirmación con la cantidad de elementos).
-
-  Los que cambian el IFC heredan de `bonsai_api.IfcOperator`: un paso de deshacer por acción, que marca
-  `is_dirty`. Contrato en [contracts/ui.md](contracts/ui.md).
-- **`ui.py`**:
-  - menú `BIMSIMPLE_MT_file` ("Archivo");
-  - `BIMSIMPLE_UL_storeys`, con nombre, cota y altura como **texto**, para que el doble clic no renombre;
-  - panel `BIMSIMPLE_PT_navigator` en la barra lateral de la vista derecha, `bl_category="BIM Simple"`.
-- **`screen.py`**:
-  - `ensure_layout(window)` (research R7–R8, R10);
-  - reemplazo y restauración de `TOPBAR_HT_upper_bar.draw`;
-  - ocultar paneles de Blender (re-registro con `poll` falso; paneles C por `bl_idname`);
-  - `show_storey_in_plan(storey)`, que calcula el índice de colección y llama a `object.hide_collection` en la planta.
-- **`keymaps.py`**: `apply_keymap_policy()` y los atajos propios (research R9). La lista de desactivación
-  vive en una tabla de datos, por keymap, para revisarla fácil.
-- **`session.py`**: `.blend` de sesión, puente `save_pre`, carpeta de recuperación y aviso al arrancar
-  (research R15, X2). Si X2 no pasa la prueba manual, se cambia a X1 en este mismo módulo.
-
-### Prueba automática (`tests/test_pisos.py`)
-
-Corre con el Blender del programa (research R17) y cubre:
-1. Entorno: Blender 5.2, Bonsai 0.9.0, modo portable, preferencias de R5 (idioma, sin bienvenida, Bonsai sin
-   espacio "BIM"), plantilla activa.
-2. FR-007: proyecto nuevo IFC4 en metros, nombres, Planta Baja 0,00 / 3,00 activa, escena sin objetos
-   ajenos. Un segundo "Nuevo" con proyecto abierto también funciona.
-3. FR-012 a FR-016: agregar arriba y abajo con sus nombres y cotas; renombrar, incluido un nombre repetido;
-   cambiar altura y cota con desplazamiento de los pisos superiores y de los elementos (en Blender y en el
-   IFC); rechazos de valores inválidos.
-4. FR-017 / FR-021: borrar un piso con elementos (cuenta para el aviso, sin huérfanos, activa el inferior);
-   borrar el activo; no borrar el último.
-5. FR-018: deshacer y rehacer del lado IFC (simulado como en `investigacion/ifc.md` §7).
-6. FR-008 a FR-011: guardar, guardar como, abrir con piso activo más cercano a 0,00, archivo dañado sin tocar
-   el proyecto, IFC de otro programa en milímetros, dos edificios, sin pisos, `is_dirty`.
-7. FR-019 / SC-002 / SC-003: reabrir con IfcOpenShell (nombres, `Elevation` = ubicación, `GrossHeight`,
-   contención) y validar con `express_rules=True` sin errores.
-8. FR-003 (lógica): `TOPBAR_HT_upper_bar.draw` reemplazado; paneles de Blender en `VIEW_3D/UI` con `poll`
-   falso; después de `keyconfig_init()`, la lista de atajos inactiva y los propios activos; filtro por dueño
-   del espacio.
-9. FR-022 (lógica): índice de colección elegido para cada piso. SC-004: `activate_storey` + cálculo para 10
-   pisos en menos de 1 s.
-
-Los elementos de prueba se crean con la receta verificada (`investigacion/scripts/_recetas.py`), desde el
-archivo de prueba y no desde el producto.
-
-## Pasos que requieren permiso del usuario (constitución, flujo de trabajo)
+## Pasos que requieren permiso del usuario
 
 | Paso | Cuándo |
 |---|---|
-| Descargar `bonsai_py313-0.9.0-windows-x64.zip` del release oficial (~150 MB) y verificar su SHA-256 | Antes del primer armado |
-| Crear `%LOCALAPPDATA%\Programs\BIM Simple\`, copiar Blender (830 MB) e instalar Bonsai (~600 MB) | Primer armado |
-| Abrir BIM Simple con ventana: prueba manual, arranque (SC-007), título, icono y X | Después de que pase la prueba automática |
-| Crear `BIM Simple.lnk` en el Escritorio y en el menú Inicio | Al final |
-| Borrar la copia de prueba de Blender que dejó la investigación (842 MB en la carpeta temporal de la sesión) | Cuando el usuario quiera |
+| Armar `runtime/python` y `app/node_modules`: copiando del prototipo (ya autorizado) o descargando de nuevo | Al empezar la implementación |
+| Descargar electron-builder (npm) | Antes de armar el instalador |
+| Abrir la ventana del programa para la prueba manual | Al terminar cada historia, si el usuario quiere verla |
+| Instalar el programa con su instalador (crea accesos directos) | Al final |
+| Hacer privado el repositorio de GitHub y reemplazar `LICENSE` | **Antes de subir cualquier commit** (R11) |
+| Borrar archivos obsoletos (`PLAN.md` u otros) | Solo si el usuario lo pide |
 
 ## Riesgos
 
-1. **Partes internas de Blender**: reemplazo del dibujo de la barra superior, paneles C reemplazados por
-   `bl_idname` y keymaps de fábrica. Una versión nueva de Blender puede cambiarlas. Mitigación: la prueba
-   automática comprueba cada una, y la versión de Blender del programa queda fija hasta que se decida
-   actualizarla.
-2. **13 llamadas internas de Bonsai** (`investigacion/ifc.md` §10). Mitigación: concentradas en
-   `bonsai_api.py` y todas ejercitadas por la prueba.
-3. **X de la ventana (X2)**: depende del diálogo de Blender y de un `.blend` de sesión. Solo se puede comprobar
-   con ventana. Si falla, el plan B es X1 (research R15).
-4. **Colecciones locales y Ctrl+Z real**: no se pueden probar en segundo plano; van a la prueba manual.
-5. **Barra lateral plegada**: sin flechas ni N, el usuario no podría volver a abrirla. Mitigación:
-   `ensure_layout` la vuelve a mostrar en `load_post` y en cada activación de piso.
+1. **Diálogo "Editar piso" propio**: es HTML, no un diálogo nativo. Mitigación: contrato de textos en
+   [ui.md](contracts/ui.md) y prueba del programa.
+2. **El motor se cae**: se pierden los cambios sin guardar. Mitigación: reinicio automático y aviso;
+   más adelante, autoguardado.
+3. **Tamaño (~640 MB) y SmartScreen sin firma de código**: ver research R9. No bloquea el uso propio;
+   hay que resolverlo antes de vender.
+4. **`MSVCP140.dll` en una PC limpia** (research R9): se incluye junto al programa y hay que probar
+   la instalación en una PC limpia (Windows Sandbox o una máquina virtual) antes de entregarlo.
+5. **CGAL dentro de IfcOpenShell**: pendiente legal antes de la primera venta (Principio VI).
+6. **Repositorio público con GPL** (R11): bloqueo antes de subir commits.
 
 ## Seguimiento de complejidad
 
-No hay violaciones de la constitución que justificar. Las diferencias con la especificación que impone
-Blender están en [research.md §E](research.md) (D1–D7) y se revisan en la prueba manual.
+No hay violaciones de la constitución que justificar.

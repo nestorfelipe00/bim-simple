@@ -1,62 +1,95 @@
-# Contrato: funciones de `bim_simple/core.py`
+# Contrato: protocolo del motor BIM
 
-`core.py` es la lógica sin interfaz (Principio V). La usan los operadores y la prueba automática, y no
-importa `ui`, `props`, `screen` ni `keymaps`. Para hablar con Bonsai usa solo `bonsai_api`; para el IFC, la API
-pública de IfcOpenShell (`ifcopenshell.api`, `ifcopenshell.util`). Las recetas están en
-[research.md](../research.md) §C.
+El motor es un proceso de Python (`python -m bimsimple_engine`) que usa IfcOpenShell. La interfaz
+no le habla directamente: el proceso principal de Electron lo lanza, le escribe órdenes por
+**stdin** y lee las respuestas por **stdout**, una línea JSON por mensaje (UTF-8, sin BOM). Los
+errores inesperados y los registros del motor van por **stderr**. Base: el prototipo validado
+(`docs/base-tecnologica/prototipo/motor/motor.py`).
 
-## Convenciones
+## Mensajes
 
-- **Unidades**: cotas y alturas siempre en **metros** (`float`). `core` convierte con el `unit_scale` del archivo.
-- **Pisos**: se identifican por `ifc_id: int` (`entity.id()`).
-- **Errores**: si una regla no se cumple, la función lanza `BIMSimpleError(mensaje_en_español)` **sin haber
-  cambiado nada**. Los mensajes son los de [ui.md](ui.md).
-- **Transacciones**: las funciones que cambian el IFC **no** abren transacción. Los operadores las llaman
-  dentro de `IfcOperator._execute`, lo que da un paso de deshacer y marca `is_dirty`. La prueba puede llamarlas
-  directamente.
+```jsonc
+// interfaz → motor (vía proceso principal)
+{"id": 12, "cmd": "add_storey_above", "args": {}}
 
-```python
-class BIMSimpleError(Exception): ...
+// motor → interfaz: éxito
+{"id": 12, "ok": true, "result": { ... }, "ms": 3.8}
 
-@dataclass(frozen=True)
-class StoreyInfo:
-    ifc_id: int
-    name: str
-    elevation: float      # m, cota de la ubicación
-    height: float         # m, distancia al piso de arriba (el más alto: GrossHeight o 3,00)
-    is_active: bool
+// motor → interfaz: error esperable (regla del modelo, archivo inválido…)
+{"id": 12, "ok": false, "error": "La cota debe ser mayor que la del piso de abajo («Planta Baja», 0,00 m).", "ms": 0.4}
+
+// motor → interfaz: error interno (falla del motor; se registra la traza)
+{"id": 12, "ok": false, "error": "Error interno: …", "trace": "…", "ms": 2.1}
+
+// al arrancar, una sola vez
+{"id": 0, "ok": true, "result": {"ready": true, "ifcopenshell": "0.9.0", "import_ms": 300}}
 ```
 
-## Proyecto
+- Los `cmd` y los nombres de campos van en inglés (constitución, Principio II). Los textos de
+  `error` van en español, listos para mostrar al usuario.
+- Cotas y alturas siempre en **metros** (`float`). Los pisos y elementos se identifican por su
+  `id` IFC (entero).
+- Cada orden que cambia el IFC es **una** transacción, es decir, un paso de deshacer. Si una regla
+  no se cumple, el motor responde `ok: false` **sin haber cambiado nada**.
+- El motor atiende las órdenes de a una y en orden.
 
-| Función | Devuelve | Comportamiento | Requisitos |
+## Estado (`State`)
+
+Lo devuelven `state` y todas las órdenes que cambian algo (en `result.state`).
+
+```jsonc
+{
+  "has_project": true,
+  "path": "C:\\…\\Casa.ifc",        // "" si nunca se guardó
+  "dirty": true,                     // cambios sin guardar
+  "storeys": [                       // de mayor a menor cota
+    {"id": 59, "name": "Piso 1", "elevation": 3.0, "height": 3.0, "elements": 4},
+    {"id": 40, "name": "Planta Baja", "elevation": 0.0, "height": 3.0, "elements": 4}
+  ],
+  "active_storey_id": 40,
+  "notice": "",                      // aviso del navegador (varios edificios, sin pisos)
+  "can_undo": true,
+  "can_redo": false
+}
+```
+
+## Órdenes
+
+| `cmd` | `args` | `result` | Requisitos |
 |---|---|---|---|
-| `has_project()` | `bool` | Hay un IFC abierto. | |
-| `project_path()` | `str` | Ruta actual, o `""` si nunca se guardó. | FR-009 |
-| `is_dirty()` | `bool` | Hay cambios sin guardar. | FR-010 |
-| `new_project()` | `None` | Si hay proyecto, primero `close_project()`. Luego crea un IFC4 en metros: Proyecto > Sitio > Edificio > "Planta Baja" (cota 0,00, `GrossHeight` 3,00), la deja activa y borra el historial de deshacer. | FR-007, FR-021 |
-| `open_project(path, add_to_recent=True)` | `None` | Valida con `ifcopenshell.open` y exige `IfcProject`; si falla, lanza `BIMSimpleError` y **no cambia nada**. Si pasa: cierra el proyecto actual, carga sin reiniciar la sesión, activa el piso de cota más cercana a 0,00 y borra el historial de deshacer. | FR-008, FR-011 |
-| `save_project(path=None, add_to_recent=True)` | `str` (ruta guardada) | Con `path`, guarda ahí y esa pasa a ser la ruta actual (guardar como). Sin `path`, usa la ruta actual; si no hay, lanza `BIMSimpleError` y el operador abre el explorador. Siempre con `bim.save_project`. | FR-009 |
-| `close_project()` | `None` | Descarga el IFC y sus objetos sin `read_homefile`. Uso interno y de pruebas. | |
+| `state` | — | `State` | |
+| `new_project` | — | `{state}` | FR-007, FR-021 |
+| `open_project` | `path` | `{state}` | FR-008, FR-011 |
+| `save_project` | `path` (opcional; sin él usa la ruta actual) | `{state, path}` | FR-009 |
+| `validate_file` | `path` | `{errors, messages[]}` | SC-003. Lo usa el proceso de validación aparte (research R6). |
+| `add_storey_above` | — | `{state, storey_id}` | FR-013 |
+| `add_storey_below` | — | `{state, storey_id}` | FR-014 |
+| `edit_storey` | `id`, `name`?, `elevation`?, `height`? | `{state, changed_ids[]}` | FR-015, FR-016. Aplica solo lo que viene, en **una** transacción. `changed_ids` incluye los elementos que se movieron. |
+| `count_storey_elements` | `id` | `{count}` | FR-017 |
+| `delete_storey` | `id` | `{state, deleted_ids[]}` | FR-017, FR-021 |
+| `activate_storey` | `id` | `{state}` | FR-020, FR-021, FR-023. No cambia el IFC ni marca cambios. |
+| `undo` / `redo` | — | `{state}` | FR-018 |
+| `meshes` | `ids`? (sin él, todos) | `{meshes[], existing_ids[], failures[]}` | FR-002, FR-022; formato en [data-model.md](../data-model.md) §5 |
 
-## Edificio y pisos
+## Errores esperables (texto exacto)
 
-| Función | Devuelve | Comportamiento | Requisitos |
-|---|---|---|---|
-| `building_notice()` | `str` | `""`; "El archivo tiene N edificios; se muestran los pisos de «…»"; o "Este archivo no tiene pisos". | Casos límite |
-| `list_storeys()` | `list[StoreyInfo]` | Pisos del primer edificio, de mayor a menor cota (empate por nombre). | FR-011, FR-012 |
-| `add_storey_above()` | `StoreyInfo` | Encima del más alto: cota = cota + altura del más alto, la misma altura, nombre "Piso N". | FR-013 |
-| `add_storey_below()` | `StoreyInfo` | Debajo del más bajo: cota − 3,00, altura 3,00, nombre "Sótano N". | FR-014 |
-| `rename_storey(ifc_id, name)` | `None` | Nombre recortado; vacío → error. Se permiten repetidos y se corrige el " 2" de Bonsai. | FR-015, casos límite |
-| `set_storey_elevation(ifc_id, elevation)` | `None` | Regla de cota de FR-016 (mueve ese piso y los de arriba con sus elementos, en el IFC y en Blender, y ajusta `Elevation` y `GrossHeight`). | FR-015, FR-016 |
-| `set_storey_height(ifc_id, height)` | `None` | Regla de altura de FR-016. Altura ≤ 0 → error. | FR-015, FR-016 |
-| `count_storey_elements(ifc_id)` | `int` | `IfcElement` de la descomposición, sin aberturas. | FR-017 |
-| `delete_storey(ifc_id)` | `int` (elementos borrados) | Único piso → error. Borra los elementos y el piso; activa el inferior (o el superior). Los de arriba no se mueven. | FR-017, FR-021 |
-| `activate_storey(ifc_id)` | `None` | Fija el contenedor por defecto. No cambia el IFC ni marca cambios. | FR-020, FR-021, FR-023 |
-| `active_storey_id()` | `int \| None` | | FR-021 |
+| Situación | `error` |
+|---|---|
+| Orden sin proyecto abierto | "No hay ningún proyecto abierto." |
+| Archivo dañado o que no es IFC | "No se pudo abrir «archivo»: no es un archivo IFC válido." |
+| IFC sin `IfcProject` | "No se pudo abrir «archivo»: no contiene un proyecto IFC." |
+| Guardar sin ruta | "Elige dónde guardar el proyecto." (la interfaz abre el diálogo de Guardar como) |
+| Cota inválida | "La cota debe ser mayor que la del piso de abajo («nombre», X,XX m)." |
+| Altura inválida | "La altura debe ser mayor que 0." |
+| Nombre vacío | "El nombre del piso no puede quedar vacío." |
+| Último piso | "No se puede borrar el único piso del edificio." |
+| Sin edificio | "Este archivo no tiene un edificio donde agregar pisos." |
+| Nada que deshacer o rehacer | "No hay nada que deshacer." / "No hay nada que rehacer." |
+| Orden desconocida | "Orden desconocida: <cmd>" |
 
-## Lo que `core` no hace
+## Lo que el motor no hace
 
-- No dibuja nada ni cambia la pantalla: la visibilidad de la planta es de `screen.show_storey_in_plan`.
-- No pregunta nada: los diálogos son de los operadores.
-- No guarda con `ifcopenshell.file.write()`: no sincroniza los objetos movidos (research R11).
+- No dibuja ni conoce la pantalla.
+- No pregunta nada al usuario: las preguntas las hace la ventana.
+- No valida dentro de `save_project`, porque bloquearía ~1,7 s. La validación corre aparte
+  (research R6).

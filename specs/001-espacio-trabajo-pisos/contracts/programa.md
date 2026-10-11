@@ -1,83 +1,55 @@
-# Contrato: el programa BIM Simple (instalación, arranque y armado)
+# Contrato: el programa BIM Simple (instalación, carpetas, arranque y licencias)
 
-Fuente: research R1–R6, R17. Lo que este contrato fija lo comprueban `tools/armar_programa.ps1` (al armar)
-y `tests/test_pisos.py` (sección "Entorno").
+Fuente: research R1, R3, R9 y R10; spec FR-001, FR-005, SC-005 y SC-007. La prueba del programa y
+la lista manual comprueban lo que este contrato fija.
 
-## Carpeta instalada
+## Instalador
 
-`%LOCALAPPDATA%\Programs\BIM Simple\` (ruta base de 90 caracteres o menos, escribible, sin administrador):
+| Elemento | Contrato |
+|---|---|
+| Archivo | `BIM Simple Setup <versión>.exe`, armado con `npm --prefix app run dist` (electron-builder 26.17.0, destino NSIS) |
+| Instalación | **Por usuario, sin administrador** (`perMachine: false`), en un paso (`oneClick: true`) |
+| Destino | `%LOCALAPPDATA%\Programs\<nombre del paquete>\` |
+| Accesos directos | "BIM Simple" en el Escritorio y en el menú Inicio (los crea el instalador) |
+| Desinstalar | Desde "Agregar o quitar programas". No deja nada fuera de los archivos del usuario (SC-005), incluida la copia `%LOCALAPPDATA%\bim-simple-updater` (research R9, riesgo 3) |
+| Identidad | `appId` y AppUserModelID = `BIMSimple.BIMSimple`. No se cambia nunca |
+| Icono | `app/build/icon.ico` con 16, 24, 32, 48 y 256 px |
+
+## Carpetas instaladas
 
 ```text
-BIM Simple\
-├── bim_simple.ico
-├── LEEME.txt                      qué es, cómo abrir, cómo desinstalar
-├── licencias\                     GPL-3.0 + avisos de Blender, Bonsai e IfcOpenShell
-└── blender\                       copia de Blender 5.2.0 sin blender.pdb (no se modifica)
-    └── portable\
-        ├── config\userpref.blend
-        ├── temp\                  (quit.blend, BIM Simple.blend de sesión, recuperacion\)
-        ├── extensions\user_default\bonsai\
-        ├── extensions\user_default\bim_simple\
-        ├── extensions\.local\lib\python3.13\site-packages\
-        └── scripts\startup\bl_app_templates_user\bim_simple\{__init__.py, userpref.blend, startup.blend}
+%LOCALAPPDATA%\Programs\<nombre del paquete>\
+├── BIM Simple.exe                 Electron (ventana + interfaz en resources\app.asar)
+├── resources\
+│   ├── app.asar                   código de la ventana y la interfaz
+│   ├── python\                    Python 3.14.7 embebible + Lib\site-packages (IfcOpenShell en su carpeta, sin modificar)
+│   └── engine\bimsimple_engine\   motor BIM
+├── LICENSES.chromium.html         (de Electron)
+└── licencias\                     textos de licencia: LGPL-3.0 y GPL-3.0 (para IfcOpenShell), MIT de Electron, Three.js y camera-controls, PSF de Python y las de las dependencias
 ```
+
+## Datos del usuario
+
+- **Proyectos**: donde el usuario los guarde (`.ifc`).
+- **Registro del motor** (stderr): `%APPDATA%\BIM Simple\logs\engine.log`, que es la carpeta de
+  datos de Electron.
+- No se escribe en el registro de Windows salvo lo que hace el instalador (entrada de desinstalación).
+- No se modifica ninguna otra instalación: Blender, Python del sistema y similares.
 
 ## Arranque
 
-- Acceso directo `BIM Simple.lnk` (Escritorio y menú Inicio):
-  - destino `…\blender\blender-launcher.exe`;
-  - argumentos `--app-template bim_simple`;
-  - carpeta de trabajo `…\blender`;
-  - icono `…\bim_simple.ico,0`;
-  - descripción "BIM Simple: modelado BIM sobre IFC".
-- Condiciones que deben cumplirse al arrancar:
-  - sin consola;
-  - sin pantalla de bienvenida;
-  - interfaz en español;
-  - Bonsai y BIM Simple activos;
-  - Bonsai sin espacio "BIM";
-  - escena sin objetos;
-  - pantalla de BIM Simple armada (ver [ui.md](ui.md)).
+1. El acceso directo abre `BIM Simple.exe`.
+2. El proceso principal fija el AppUserModelID, crea la ventana y lanza el motor
+   (`resources\python\python.exe -u -m bimsimple_engine`, con `windowsHide`).
+3. El motor anuncia `ready`; la pantalla queda lista sin proyecto (FR-006).
+4. Desde el doble clic hasta poder pulsar "Nuevo proyecto": menos de 10 s (SC-007).
 
-## Preferencias fijas
+## Licencias en el programa (Principio VI)
 
-Tabla completa en research R5. La prueba automática comprueba:
-
-| Preferencia | Valor |
-|---|---|
-| `bpy.utils.resource_path('USER')` | termina en `portable` |
-| `preferences.app_template` | `bim_simple` |
-| `view.language` | `es` |
-| `view.show_splash` | `False` |
-| `use_preferences_save` | `False` |
-| `filepaths.temporary_directory` | `…\portable\temp\` |
-| `apps.show_regions_visibility_toggle`, `apps.show_corner_split` | `False` |
-| Add-ons activos | incluyen `bl_ext.user_default.bonsai` y `bl_ext.user_default.bim_simple` |
-| Preferencias de Bonsai `should_setup_workspace`, `activate_workspace`, `should_setup_toolbar` | `False` |
-
-## Script de armado `tools/armar_programa.ps1`
-
-| Parámetro | Por defecto | Qué hace |
-|---|---|---|
-| `-Destino` | `%LOCALAPPDATA%\Programs\BIM Simple` | Carpeta del programa. |
-| `-BonsaiZip` | (obligatorio en el primer armado) | Zip `bonsai_py313-0.9.0-windows-x64.zip`. Se compara su SHA-256 con el publicado. |
-| `-SoloExtension` | apagado | Reinstala solo la extensión y la plantilla, corre la prueba y el control SC-005. |
-| `-CrearAccesos` | apagado | Crea los dos `BIM Simple.lnk`. Nunca se crean sin este parámetro. |
-
-**Salida**:
-- una línea `OK …` o `ERROR …` por paso;
-- la salida real de la prueba automática;
-- el resultado del control SC-005 ("Blender del usuario sin cambios" o la lista de archivos que cambiaron).
-
-**Código de salida**: 0 si todo pasa y 1 si falla cualquier paso o la prueba.
-
-**Nunca**:
-- escribe en `C:\Program Files\Blender Foundation\Blender 5.2`;
-- escribe en `%APPDATA%\Blender Foundation\Blender\5.2`;
-- descarga nada: el zip lo descarga el usuario o el asistente con permiso, antes de llamar al script.
-
-## Desinstalar (FR-005)
-
-Borrar `%LOCALAPPDATA%\Programs\BIM Simple\` y los dos `BIM Simple.lnk`. Así se explica en `LEEME.txt`.
-Lo único que queda fuera es la caché compartida de Blender (`%LOCALAPPDATA%\Blender Foundation\Blender\Cache`),
-diferencia D7.
+- La ventana **Acerca de** (menú Ayuda, función futura; mientras tanto, la carpeta `licencias\`)
+  indica que el programa usa IfcOpenShell bajo LGPL-3.0 y cómo obtener su código fuente.
+- IfcOpenShell se distribuye sin modificar, en su propia carpeta y reemplazable.
+- Antes de la **primera venta**, el programa NO se distribuye sin:
+  1. aclarar CGAL dentro de los binarios de IfcOpenShell;
+  2. la firma de código (research R9, riesgo 2);
+  3. la prueba en una PC limpia (research R9, riesgo 1).
