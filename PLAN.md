@@ -1,6 +1,6 @@
 # PLAN — BIM Simple (Fase 0)
 
-Estado: **esperando aprobación**. No hay código del producto escrito todavía.
+Estado: **MVP terminado (Fases 0 a 4)**. Plan aprobado; los cambios hechos durante la implementación están anotados en D5, D7 y Riesgos. Prueba automática: `tests/test_mvp.py`. Prueba manual: `PRUEBA_MANUAL.md`.
 
 ## 1. Entorno verificado
 
@@ -138,6 +138,7 @@ SOFTWARE BIM/
 4. **Primer punto con altura falsa (Bonsai 0.9.0).** Si el clic que arranca el dibujo es el mismo que marca el primer punto, Bonsai guarda ese punto con la altura que trae el imán (se vio z = −10 m), y el primer tramo sale con largo y ángulo errados. La herramienta original de Bonsai falla igual con esos clics. `bimsimple.draw_wall` fija todos los puntos a la cota del piso activo (`flatten_points`).
 5. **Deshacer (Ctrl+Z).** Las funciones de creación llamadas fuera de un `tool.Ifc.Operator` no quedan en el historial de deshacer IFC de Bonsai. Nuestros operadores interactivos deben heredar de `tool.Ifc.Operator`.
 6. **Losa por polilínea** usa `container_obj.location.z` sin comprobar que haya piso activo (`slab.py:96`). `core.py` debe asegurarse siempre de que haya un piso activo.
+7. **Menú File.** El filtro de add-ons de D7 también oculta las opciones IFC que Bonsai agrega al menú File. En "BIM Simple", `ui.py` agrega "Abrir IFC…", "Guardar IFC" y "Guardar IFC como…", que usan `bim.load_project` y `bim.save_project` de Bonsai.
 
 ## 6. Pendiente de tu aprobación
 
