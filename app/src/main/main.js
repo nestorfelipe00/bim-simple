@@ -268,6 +268,7 @@ if (TEST) {
     Menu.getApplicationMenu().items.map((item) => ({ label: item.label, items: item.submenu.items.filter((i) => i.type !== "separator").map((i) => i.label) }))
   );
   ipcMain.handle("test-kill-engine", () => engine.killForTest());
+  ipcMain.handle("test-output-dir", () => TEST_OUTPUT);
   // Termina la prueba. Si se pide, el último paso es cerrar la ventana con cambios: lo registra el proceso principal,
   // porque la página desaparece al cerrarse.
   ipcMain.handle("test-finish", async (_event, result) => {

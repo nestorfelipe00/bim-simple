@@ -230,7 +230,7 @@ pasa la validación IFC4.
 
 ### Pruebas de la Historia 1
 
-- [ ] T021 [US1] En `engine/tests/test_engine.py`, agregar las pruebas de la Historia 1:
+- [X] T021 [US1] En `engine/tests/test_engine.py`, agregar las pruebas de la Historia 1:
   - **`new_project`**: el archivo es `IFC4` con unidad `METRE` y nombres "Proyecto", "Sitio", "Edificio",
     "Planta Baja"; la Planta Baja tiene `elevation` 0,0, `height` 3,0 (`GrossHeight`) y está activa;
     `dirty=False`; `can_undo=False`;
@@ -241,7 +241,7 @@ pasa la validación IFC4.
 
 ### Implementación de la Historia 1
 
-- [ ] T022 [US1] En `engine/bimsimple_engine/storeys.py`:
+- [X] T022 [US1] En `engine/bimsimple_engine/storeys.py`:
   - `create_storey(project, name, elevation, height)`: `root.create_entity("IfcBuildingStorey")` +
     `aggregate.assign_object` + `geometry.edit_object_placement` (Z = cota) + `attribute.edit_attributes(Elevation)`
     + `pset.add_qto("Qto_BuildingStoreyBaseQuantities")` + `edit_qto(GrossHeight)`;
@@ -250,7 +250,7 @@ pasa la validación IFC4.
     el más alto, `Qto_BuildingStoreyBaseQuantities.GrossHeight`, o 3,00 si no existe»; `elements` = cantidad de
     `IfcElement` sin aberturas; orden de mayor a menor cota, con empate por nombre;
   - `notice(project)`, con los textos exactos de [core_api.md](contracts/core_api.md).
-- [ ] T023 [US1] En `engine/bimsimple_engine/project.py`:
+- [X] T023 [US1] En `engine/bimsimple_engine/project.py`:
   - **`new_project`**, con la receta del prototipo pero **sin** el tipo de muro (es de la función 2):
     `ifcopenshell.api.project.create_file("IFC4")`; unidades SI LENGTHUNIT, AREAUNIT, VOLUMEUNIT y PLANEANGLEUNIT;
     contextos Model/Body/MODEL_VIEW y Plan/Axis/GRAPH_VIEW; Sitio y Edificio con su ubicación; Planta Baja con
@@ -260,27 +260,27 @@ pasa la validación IFC4.
     `validate(path, logger, express_rules=True)`, y devuelve la cantidad de errores y los 5 primeros mensajes.
 
   Registrar las órdenes en `commands.py`.
-- [ ] T024 [P] [US1] Crear `app/src/main/validator.js`. Después de cada guardado lanza un **segundo** motor
+- [X] T024 [P] [US1] Crear `app/src/main/validator.js`. Después de cada guardado lanza un **segundo** motor
   (`python -m bimsimple_engine`), le manda `validate_file` y lo cierra; envía a la página "Guardado. Validación IFC4:
   N errores." (research R6).
-- [ ] T025 [US1] Crear `app/src/renderer/storey-panel.js` (primera parte):
+- [X] T025 [US1] Crear `app/src/renderer/storey-panel.js` (primera parte):
   - **sin proyecto**: "No hay ningún proyecto abierto" y los botones Nuevo proyecto / Abrir IFC…;
   - **con proyecto**: nombre del archivo o "Proyecto sin guardar" y "• Cambios sin guardar";
   - `notice`;
   - tabla Piso | Cota | Altura con dos decimales y coma decimal, el activo con "●" y fondo resaltado;
   - área de mensajes.
-- [ ] T026 [US1] En `app/src/main/main.js`:
+- [X] T026 [US1] En `app/src/main/main.js`:
   - **Archivo > Nuevo proyecto**: pregunta si hay cambios y llama a `new_project`;
   - **Guardar IFC**: `save_project`; si responde "Elige dónde guardar el proyecto.", sigue como Guardar como;
   - **Guardar IFC como…**: `dialog.showSaveDialog` con el filtro "Modelo IFC" (`*.ifc`) y `save_project(path)`;
   - **Salir**: igual que la X;
   - después de guardar, `validator.js`; actualizar el título.
-- [ ] T027 [US1] En `app/src/main/main.js`, el menú **Ayuda > Acerca de BIM Simple**: `dialog.showMessageBox` con el
+- [X] T027 [US1] En `app/src/main/main.js`, el menú **Ayuda > Acerca de BIM Simple**: `dialog.showMessageBox` con el
   título "Acerca de BIM Simple", el botón "Cerrar" y el **texto exacto** de [ui.md](contracts/ui.md) (versión,
   IfcOpenShell 0.9.0 bajo LGPL-3.0 con el enlace https://github.com/IfcOpenShell/IfcOpenShell, Electron, Three.js y
   camera-controls bajo MIT, Python bajo PSF, y la carpeta «licencias»). La versión sale de `app.getVersion()`.
   Es el aviso de licencias que exige la constitución (Principio VI) y FR-003.
-- [ ] T028 [US1] En `app/test/window-test.js`, sección "Historia 1":
+- [X] T028 [US1] En `app/test/window-test.js`, sección "Historia 1":
   - Nuevo proyecto → la tabla muestra "● Planta Baja | 0,00 | 3,00" y el título es "Proyecto sin guardar — BIM Simple";
   - guardar como en `app/test-output/prueba.ifc` → el título es "prueba.ifc — BIM Simple" y aparece el mensaje de
     validación con 0 errores;
@@ -289,7 +289,7 @@ pasa la validación IFC4.
 
   La pregunta al cerrar o al hacer Nuevo con cambios se prueba en la Historia 2 (T035), porque en la Historia 1
   todavía no hay ninguna acción que deje cambios sin guardar.
-- [ ] T029 [US1] Ejecutar las dos pruebas automáticas y mostrar la salida real; todas pasan. Hacer commit.
+- [X] T029 [US1] Ejecutar las dos pruebas automáticas y mostrar la salida real; todas pasan. Hacer commit.
 
 **Punto de control**: la Historia 1 funciona y se prueba sola.
 

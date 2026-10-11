@@ -11,6 +11,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; font: 13px "Segoe UI", system-ui, sans-serif; color: var(--texto); background: var(--fondo); }
 body { display: flex; overflow: hidden; }
 

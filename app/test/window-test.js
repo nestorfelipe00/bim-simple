@@ -66,3 +66,41 @@ async function environment(t) {
   t.step(S, "Vistas vacías al arrancar (FR-006)", t.app.meshes.size === 0);
   await t.capture("base");
 }
+
+// ---------- Historia 1: abrir BIM Simple, empezar un proyecto y guardarlo ----------
+async function waitFor(condition, timeoutMs = 10000) {
+  const started = performance.now();
+  while (performance.now() - started < timeoutMs) {
+    if (condition()) return true;
+    await sleep(100);
+  }
+  return false;
+}
+
+addSection(async function historia1(t) {
+  const S = "Historia 1";
+  await t.app.handleAction("new"); // Archivo > Nuevo proyecto
+  t.step(S, "Nuevo proyecto: «● Planta Baja | 0,00 | 3,00» (FR-007)", JSON.stringify(t.tableRows()) === JSON.stringify([["● Planta Baja", "0,00", "3,00"]]), t.tableRows());
+  t.step(S, "Título: «Proyecto sin guardar — BIM Simple» (FR-004)", (await bim.test.windowTitle()) === "Proyecto sin guardar — BIM Simple", await bim.test.windowTitle());
+
+  const output = await bim.test.outputDir();
+  const path = `${output}\\prueba.ifc`;
+  await bim.test.answerDialogs([path]); // el diálogo "Guardar IFC como" responde con esta ruta
+  const saved = await t.app.handleAction("save"); // Guardar IFC sin ruta → Guardar como
+  t.step(S, "Guardar IFC en un proyecto nuevo pide la ruta y guarda (FR-009)", saved && saved.ok && saved.result.path === path, saved);
+  t.step(S, "Título: «prueba.ifc — BIM Simple»", (await bim.test.windowTitle()) === "prueba.ifc — BIM Simple", await bim.test.windowTitle());
+  const validated = await waitFor(() => document.getElementById("messages").textContent === "Guardado. Validación IFC4: 0 errores.");
+  t.step(S, "Validación en segundo plano: «Guardado. Validación IFC4: 0 errores.» (SC-003)", validated, document.getElementById("messages").textContent);
+
+  await bim.about(); // Ayuda > Acerca de BIM Simple
+  const log = await bim.test.dialogLog();
+  const about = log.dialogs.find((d) => d.title === "Acerca de BIM Simple");
+  t.step(S, "Acerca de: aviso LGPL-3.0 de IfcOpenShell con su enlace (FR-003, Principio VI)", about && about.message.includes("IfcOpenShell 0.9.0 — LGPL-3.0") && about.message.includes("https://github.com/IfcOpenShell/IfcOpenShell"), about);
+  await t.capture("h1");
+});
+
+addSection(async function historia1Panel(t) {
+  const S = "Historia 1";
+  const actions = document.getElementById("no-project-actions");
+  t.step(S, "Con proyecto abierto se ocultan «Nuevo proyecto» y «Abrir IFC…» del panel (ui.md)", getComputedStyle(actions).display === "none");
+});

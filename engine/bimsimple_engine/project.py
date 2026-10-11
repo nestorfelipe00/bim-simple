@@ -1,7 +1,14 @@
-"""Estado del proyecto abierto: el archivo IFC, su ruta, los cambios sin guardar y el piso activo."""
+"""Estado del proyecto abierto (archivo IFC, ruta, cambios sin guardar, piso activo) y órdenes de proyecto."""
 
 import ifcopenshell
+import ifcopenshell.api.aggregate
+import ifcopenshell.api.context
+import ifcopenshell.api.geometry
+import ifcopenshell.api.project as project_api
+import ifcopenshell.api.root
+import ifcopenshell.api.unit
 import ifcopenshell.util.unit
+import ifcopenshell.validate
 
 from . import EngineError, storeys
 
@@ -64,3 +71,54 @@ class Project:
             "can_undo": len(self.file.history) > 0,
             "can_redo": len(self.file.future) > 0,
         }
+
+
+# ---------- órdenes de proyecto ----------
+def new_project(project):
+    """IFC4 en metros: Proyecto > Sitio > Edificio > Planta Baja (0,00 / 3,00), activa, sin historial (FR-007)."""
+    f = project_api.create_file(version="IFC4")
+    ifc_project = ifcopenshell.api.root.create_entity(f, ifc_class="IfcProject", name="Proyecto")
+    units = [ifcopenshell.api.unit.add_si_unit(f, unit_type=t)
+             for t in ("LENGTHUNIT", "AREAUNIT", "VOLUMEUNIT", "PLANEANGLEUNIT")]
+    ifcopenshell.api.unit.assign_unit(f, units=units)
+    model = ifcopenshell.api.context.add_context(f, context_type="Model")
+    ifcopenshell.api.context.add_context(f, context_type="Model", context_identifier="Body",
+                                         target_view="MODEL_VIEW", parent=model)
+    plan = ifcopenshell.api.context.add_context(f, context_type="Plan")
+    ifcopenshell.api.context.add_context(f, context_type="Plan", context_identifier="Axis",
+                                         target_view="GRAPH_VIEW", parent=plan)
+    site = ifcopenshell.api.root.create_entity(f, ifc_class="IfcSite", name="Sitio")
+    ifcopenshell.api.aggregate.assign_object(f, products=[site], relating_object=ifc_project)
+    building = ifcopenshell.api.root.create_entity(f, ifc_class="IfcBuilding", name="Edificio")
+    ifcopenshell.api.aggregate.assign_object(f, products=[building], relating_object=site)
+    for element in (site, building):
+        ifcopenshell.api.geometry.edit_object_placement(f, product=element)
+    previous = project.file
+    project.file = f
+    try:
+        storeys.create_storey(project, "Planta Baja", 0.0, storeys.DEFAULT_HEIGHT)
+    except Exception:
+        project.file = previous  # si algo falla, sigue abierto el proyecto anterior
+        raise
+    project.replace_file(f, "")
+    return {"state": project.state()}
+
+
+def save_project(project, path=None):
+    """Escribe el IFC en path, o en la ruta actual (FR-009). La validación corre aparte (research R6)."""
+    project.require_project()
+    target = path or project.path
+    if not target:
+        raise EngineError("Elige dónde guardar el proyecto.")
+    project.file.write(target)
+    project.path = target
+    project.dirty = False
+    return {"state": project.state(), "path": target}
+
+
+def validate_file(project, path):
+    """Validación IFC4 con reglas EXPRESS; devuelve la cantidad de errores y los primeros mensajes (SC-003)."""
+    logger = ifcopenshell.validate.json_logger()
+    ifcopenshell.validate.validate(path, logger, express_rules=True)
+    errors = [s for s in logger.statements if s.get("level") == "error"]
+    return {"errors": len(errors), "messages": [str(s.get("message"))[:200] for s in errors[:5]]}

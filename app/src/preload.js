@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld("bim", {
     windowTitle: () => ipcRenderer.invoke("test-window-title"),
     menuLabels: () => ipcRenderer.invoke("test-menu-labels"),
     killEngine: () => ipcRenderer.invoke("test-kill-engine"),
+    outputDir: () => ipcRenderer.invoke("test-output-dir"),
     finish: (result) => ipcRenderer.invoke("test-finish", result),
   },
 });
