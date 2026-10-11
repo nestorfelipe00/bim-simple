@@ -2,7 +2,7 @@
 
 **Carpeta**: `specs/001-espacio-trabajo-pisos` (sin rama propia; se trabaja en `main`)
 
-**Creada**: 2026-10-11
+**Creada**: 2026-10-11 · **Revisada**: 2026-10-11 (constitución v3.0.0: programa propio sin Blender)
 
 **Estado**: Borrador
 
@@ -10,8 +10,8 @@
 Muro/Info Box y Losa/Columna van en especificaciones aparte). Pantalla partida en planta 2D del
 piso activo y vista 3D; menús sobrantes ocultos; proyecto nuevo IFC4 en metros sin reiniciar;
 abrir, guardar y guardar como; navegador de pisos con nombre, cota y altura para agregar,
-renombrar, borrar y activar pisos." Aclarado después: BIM Simple debe ser un programa propio,
-independiente del Blender del usuario, que use el código de Blender sin mostrar su interfaz.
+renombrar, borrar y activar pisos." Aclarado después: BIM Simple es un programa propio, sin
+Blender, pensado para venderse cerrado.
 
 ## Aclaraciones
 
@@ -21,41 +21,44 @@ independiente del Blender del usuario, que use el código de Blender sin mostrar
   distancia al piso de arriba, y cambiarla desplaza los pisos superiores (FR-016).
 - P: ¿Qué pasa al borrar un piso con elementos? → R: Aviso con la cantidad de elementos; si se
   acepta, se borran el piso y sus elementos, y se puede deshacer (FR-017).
-- P: ¿Cómo se entra en BIM Simple? → R: Es un programa propio con su icono, independiente del
-  Blender instalado, que usa el código de Blender por dentro y abre directamente en la pantalla
-  de BIM Simple (FR-001, FR-004; constitución v2.0.0, Principio III).
+- P: ¿Cómo se entra en BIM Simple? → R: Es un programa propio con su icono, que abre directamente
+  en su pantalla (FR-001).
+- P: ¿Sobre qué base se construye? → R: Programa propio de escritorio, sin Blender (constitución
+  v3.0.0, Principio III), validado con un prototipo (`docs/base-tecnologica/prototipo/`).
+- P: ¿Cómo se activa un piso? → R: Con doble clic en su fila, como en ArchiCAD. La base nueva lo
+  permite (FR-020).
+- P: ¿Cómo se navega el 3D? → R: Al estilo ArchiCAD/Revit, como en el prototipo que el usuario
+  probó y aprobó (FR-025).
 
 ## Escenarios de usuario y pruebas *(obligatorio)*
 
 ### Historia 1: Abrir BIM Simple, empezar un proyecto y guardarlo (Prioridad: P1)
 
-El arquitecto abre BIM Simple desde su acceso directo, como cualquier otro programa. Aparece
-directamente la pantalla de trabajo: planta a la izquierda y 3D a la derecha, sin nada de la
-interfaz de Blender. Pulsa "Nuevo proyecto" y obtiene un proyecto con su edificio y una Planta Baja
-a cota 0,00. Lo guarda como archivo `.ifc`.
+El arquitecto abre BIM Simple desde su acceso directo, como cualquier otro programa. Aparece su
+pantalla de trabajo: planta a la izquierda, 3D a la derecha y el panel de BIM Simple. Pulsa
+"Nuevo proyecto" y obtiene un proyecto con su edificio y una Planta Baja a cota 0,00. Lo guarda
+como archivo `.ifc`.
 
 **Por qué esta prioridad**: sin programa ni proyecto no hay dónde dibujar, y sin guardar no queda
 nada. Es lo mínimo que ya sirve: un archivo IFC válido con la estructura del edificio.
 
 **Prueba independiente**: instalar BIM Simple, abrirlo desde el acceso directo, crear un proyecto,
-guardarlo y abrir el archivo con la interfaz estándar de Bonsai: contiene Proyecto > Sitio >
-Edificio > Planta Baja a 0,00.
+guardarlo y validar el archivo: contiene Proyecto > Sitio > Edificio > Planta Baja a 0,00, pasa la
+validación IFC4 y se abre en otro programa BIM.
 
 **Escenarios de aceptación**:
 
 1. **Dado** BIM Simple instalado, **cuando** el usuario lo abre desde su acceso directo,
-   **entonces** ve una ventana con el nombre e icono de BIM Simple, con la planta a la izquierda,
-   la vista 3D a la derecha y el panel de BIM Simple, sin pantallas de bienvenida ni menús,
-   paneles o herramientas de Blender o Bonsai fuera de los permitidos (FR-003).
+   **entonces** ve una ventana con el título e icono de BIM Simple, la barra de menús propia en
+   español, la planta a la izquierda, la vista 3D a la derecha y el panel de BIM Simple.
 2. **Dado** la pantalla sin proyecto, **cuando** pulsa "Nuevo proyecto", **entonces** se crea
-   Proyecto > Sitio > Edificio > Planta Baja (cota 0,00, altura 3,00), la Planta Baja queda
-   activa y el programa no se reinicia.
-3. **Dado** un proyecto nunca guardado, **cuando** pulsa "Guardar IFC", **entonces** se le pide
-   carpeta y nombre, y se escribe un archivo `.ifc`.
+   Proyecto > Sitio > Edificio > Planta Baja (cota 0,00, altura 3,00) y la Planta Baja queda activa.
+3. **Dado** un proyecto nunca guardado, **cuando** pulsa "Guardar IFC", **entonces** se abre el
+   diálogo de Windows para elegir carpeta y nombre, y se escribe un archivo `.ifc`.
 4. **Dado** un proyecto ya guardado, **cuando** pulsa "Guardar IFC", **entonces** el archivo se
    actualiza en el mismo lugar sin preguntar.
-5. **Dado** un Blender instalado aparte en la misma computadora, **cuando** el usuario lo abre
-   después de instalar y usar BIM Simple, **entonces** se ve y funciona exactamente igual que antes.
+5. **Dado** un proyecto con cambios sin guardar, **cuando** el usuario cierra la ventana con la X,
+   **entonces** se le pregunta «¿Guardar cambios antes de cerrar?» con Guardar / No guardar / Cancelar.
 
 ---
 
@@ -84,15 +87,15 @@ altura, borrar uno, guardar y volver a abrir: la lista muestra los mismos nombre
 5. **Dado** un piso con elementos, **cuando** el usuario lo borra, **entonces** ve un aviso con la
    cantidad de elementos y, si acepta, se borran el piso y sus elementos.
 6. **Dado** cualquiera de las acciones anteriores, **cuando** el usuario pulsa Ctrl+Z,
-   **entonces** la acción se deshace.
+   **entonces** la acción se deshace; con Ctrl+Y se rehace.
 
 ---
 
 ### Historia 3: Trabajar en un piso (Prioridad: P3)
 
-El arquitecto activa un piso en el navegador. La planta de la izquierda pasa a mostrar solo ese
-piso, mientras la vista 3D sigue mostrando el edificio entero. Lo que se dibuje después queda en
-ese piso.
+El arquitecto activa un piso con doble clic en el navegador. La planta de la izquierda pasa a
+mostrar solo ese piso, mientras la vista 3D sigue mostrando el edificio entero. Lo que se dibuje
+después queda en ese piso. Recorre el modelo en 3D como en ArchiCAD.
 
 **Por qué esta prioridad**: es la base del trabajo por plantas de ArchiCAD y lo que usarán las
 herramientas de dibujo de las funciones siguientes.
@@ -104,12 +107,15 @@ creado a continuación queda contenido en el Piso 1.
 
 **Escenarios de aceptación**:
 
-1. **Dado** varios pisos, **cuando** el usuario hace clic en la fila de un piso, **entonces** ese
-   piso queda marcado como activo y es el único activo.
+1. **Dado** varios pisos, **cuando** el usuario hace doble clic en la fila de un piso,
+   **entonces** ese piso queda marcado como activo y es el único activo.
 2. **Dado** un piso activo, **entonces** la planta lo muestra visto desde arriba, sin perspectiva,
    y solo con sus elementos; la vista 3D muestra todos los pisos.
 3. **Dado** un piso activo, **cuando** se crea un elemento nuevo, **entonces** queda contenido en
    ese piso, a su cota.
+4. **Dado** un modelo en la vista 3D, **cuando** el usuario arrastra con el botón izquierdo sobre
+   un elemento, **entonces** la vista gira alrededor de ese punto, sin saltos y sin pasar por
+   debajo del suelo.
 
 ---
 
@@ -151,9 +157,10 @@ sin cambios.
   más edificios.
 - **IFC sin edificio o sin pisos**: el navegador queda vacío con un mensaje explicativo; el modelo
   se ve igual en la vista 3D.
-- **Atajos de teclado propios de Blender** (por ejemplo Tab o F3): no llevan al usuario a menús,
-  paneles ni modos de Blender.
-- **BIM Simple y el Blender del usuario abiertos a la vez**: ambos funcionan sin interferirse.
+- **IFC con elementos que BIM Simple no edita** (puertas, ventanas, otros): se muestran en las
+  vistas y se conservan al guardar.
+- **El motor deja de responder**: el programa avisa en español, no se pierde el último archivo
+  guardado y ofrece reiniciar el motor.
 - **Abrir un `.ifc` con doble clic en el Explorador de Windows**: fuera de esta función; los
   archivos se abren desde "Abrir IFC…".
 
@@ -164,35 +171,32 @@ sin cambios.
 **Programa y pantalla**
 
 - **FR-001**: BIM Simple se abre como un programa propio, con su nombre e icono, desde un acceso
-  directo en el escritorio y en el menú Inicio. Al abrirse muestra directamente la pantalla de
-  BIM Simple, sin pantallas de bienvenida ni interfaz de Blender.
+  directo en el escritorio y en el menú Inicio, y muestra directamente su pantalla de trabajo.
 - **FR-002**: La pantalla se divide en dos vistas: a la izquierda la planta (vista desde arriba,
   sin perspectiva, solo del piso activo) y a la derecha la vista 3D con todo el edificio.
-- **FR-003**: En la pantalla solo se ven: las dos vistas; el panel "BIM Simple" (botones de
-  proyecto y navegador de pisos); el menú Archivo con Nuevo proyecto, Abrir IFC…, Guardar IFC,
-  Guardar IFC como… y Salir; y la navegación de las vistas con el ratón (zoom, desplazar y, en 3D,
-  orbitar). Ningún menú, panel, pestaña ni herramienta de Blender o de Bonsai está a la vista. La
-  caja de herramientas propia llega con la función 2.
-- **FR-004**: El programa usa su propia copia de Blender y de Bonsai, con configuración aparte. Un
-  Blender instalado en la misma computadora no cambia: sus preferencias, extensiones y archivo de
-  inicio quedan igual, y ambos pueden estar abiertos a la vez.
-- **FR-005**: La instalación se hace en un solo paso y crea los accesos directos. Para desinstalar
-  basta con borrar la carpeta del programa y sus accesos directos; nada más en la computadora
-  queda cambiado.
-- **FR-006**: El programa arranca con la escena vacía. Si hubiera objetos que no forman parte del
-  IFC, no se muestran en las vistas ni se guardan en el IFC.
+- **FR-003**: En la pantalla se ven: la barra de menús propia (Archivo y Edición), las dos vistas y
+  el panel "BIM Simple" (datos del proyecto, navegador de pisos y acciones). No hay menús ni
+  paneles ajenos a BIM Simple. La caja de herramientas propia llega con la función 2.
+- **FR-004**: El título de la ventana muestra el nombre del archivo, o "Proyecto sin guardar",
+  seguido de "BIM Simple", con un asterisco cuando hay cambios sin guardar.
+- **FR-005**: La instalación se hace en un solo paso, sin permisos de administrador, y crea los
+  accesos directos. Para desinstalar basta con borrar la carpeta del programa y sus accesos
+  directos. El programa no modifica nada fuera de su carpeta y de los archivos que guarda el
+  usuario; otros programas instalados (por ejemplo, Blender) no cambian.
+- **FR-006**: El programa arranca sin proyecto y con las vistas vacías; solo se muestran elementos
+  que existen en el IFC abierto.
 
 **Proyecto**
 
 - **FR-007**: "Nuevo proyecto" crea un proyecto IFC4 en metros con la jerarquía Proyecto > Sitio >
-  Edificio > Planta Baja (cota 0,00, altura 3,00) y deja la Planta Baja activa, sin reiniciar el
-  programa.
-- **FR-008**: "Abrir IFC…" abre un archivo `.ifc` existente, muestra sus pisos en el navegador y
+  Edificio > Planta Baja (cota 0,00, altura 3,00) y deja la Planta Baja activa.
+- **FR-008**: "Abrir IFC…" abre un archivo `.ifc` existente, muestra sus pisos y elementos y
   activa el piso de cota más cercana a 0,00.
 - **FR-009**: "Guardar IFC" escribe en el archivo actual; si el proyecto nunca se guardó, actúa
-  como "Guardar IFC como…", que pide carpeta y nombre y escribe un archivo `.ifc`.
+  como "Guardar IFC como…", que abre el diálogo de Windows y escribe un archivo `.ifc`.
 - **FR-010**: Si hay cambios sin guardar, "Nuevo proyecto", "Abrir IFC…", "Salir" y cerrar la
-  ventana preguntan antes Guardar / No guardar / Cancelar.
+  ventana con la X preguntan antes «¿Guardar cambios antes de cerrar?» con Guardar / No guardar /
+  Cancelar.
 - **FR-011**: Si un archivo no se puede abrir, se muestra un mensaje en español que dice por qué,
   y el proyecto abierto no cambia.
 
@@ -220,30 +224,42 @@ sin cambios.
   vacío se borra sin preguntar. Los pisos de arriba no se mueven: el piso de abajo pasa a tener
   como altura la distancia hasta el siguiente.
 - **FR-018**: Agregar, renombrar, cambiar cota o altura y borrar pisos se pueden deshacer con
-  Ctrl+Z y rehacer con Ctrl+Shift+Z.
+  Ctrl+Z y rehacer con Ctrl+Y, también desde el menú Edición.
 - **FR-019**: Cada piso es un piso IFC real (`IfcBuildingStorey`) dentro del edificio. Su nombre,
   cota y altura quedan guardados en el IFC y reaparecen iguales al volver a abrirlo.
 
-**Piso activo**
+**Piso activo y vistas**
 
-- **FR-020**: El usuario activa un piso con un clic en su fila del navegador. (En ArchiCAD es
-  doble clic; ver Supuestos.)
+- **FR-020**: El usuario activa un piso con **doble clic** en su fila del navegador, como en
+  ArchiCAD. Un clic simple solo lo selecciona para editarlo o borrarlo.
 - **FR-021**: Siempre hay exactamente un piso activo mientras haya un proyecto abierto.
 - **FR-022**: La planta muestra solo los elementos del piso activo; la vista 3D muestra todos los
   pisos.
 - **FR-023**: Todo elemento que se cree a continuación (con las herramientas de las funciones
   siguientes) queda contenido en el piso activo.
+- **FR-025**: Navegación al estilo ArchiCAD/Revit:
+  - En la vista 3D:
+    - el botón izquierdo, o Mayús + botón central, gira alrededor del punto del modelo bajo el
+      ratón;
+    - el botón central o el derecho desplazan;
+    - la rueda acerca y aleja hacia el ratón;
+    - el movimiento es suave;
+    - la vista no pasa por debajo del suelo ni se da vuelta.
+  - En la planta: la rueda acerca y aleja hacia el ratón y el botón central desplaza; la planta
+    no rota.
+  - "Encuadrar" lleva cada vista a mostrar el modelo completo: la planta, el piso activo; el 3D,
+    el edificio.
 
 **Textos**
 
-- **FR-024**: Todos los textos visibles de esta función (título de la ventana, botones, columnas,
-  mensajes y confirmaciones) están en español y usan los términos de ArchiCAD: piso, cota,
-  altura, navegador.
+- **FR-024**: Todos los textos visibles de esta función (título de la ventana, menús, botones,
+  columnas, mensajes y confirmaciones) están en español y usan los términos de ArchiCAD: piso,
+  cota, altura, navegador.
 
 ### Entidades clave
 
-- **Programa BIM Simple**: la aplicación con su icono y accesos directos. Lleva dentro su copia de
-  Blender y de Bonsai y su propia configuración.
+- **Programa BIM Simple**: la aplicación con su icono y accesos directos. Tiene una interfaz y un
+  motor BIM que trabaja sobre el IFC.
 - **Proyecto**: el archivo IFC abierto. Contiene un sitio, que contiene el edificio. Tiene un
   archivo de destino (vacío si nunca se guardó) y un estado "con cambios sin guardar".
 - **Edificio**: contiene los pisos. BIM Simple trabaja con un edificio por proyecto.
@@ -256,41 +272,33 @@ sin cambios.
 
 ### Resultados medibles
 
-- **SC-001**: Un arquitecto que nunca usó Blender abre BIM Simple, crea un proyecto, arma tres
-  pisos con sus cotas y lo guarda en menos de 3 minutos, sin ver en ningún momento la interfaz de
-  Blender.
+- **SC-001**: Un arquitecto que nunca usó BIM Simple abre el programa, crea un proyecto, arma tres
+  pisos con sus cotas y lo guarda en menos de 3 minutos, sin ayuda.
 - **SC-002**: El 100 % de los pisos creados o modificados reaparecen con el mismo nombre, cota y
   altura al cerrar y volver a abrir el archivo.
 - **SC-003**: Todo archivo guardado por BIM Simple pasa la validación del esquema IFC4 sin errores
-  y se abre sin errores en la interfaz estándar de Bonsai.
-- **SC-004**: En un proyecto de 10 pisos, activar un piso actualiza la planta en menos de 1 segundo.
-- **SC-005**: Después de instalar, usar y desinstalar BIM Simple, un Blender instalado aparte no
-  presenta ningún cambio en preferencias, extensiones ni archivo de inicio.
+  y se abre sin errores en al menos otro programa BIM.
+- **SC-004**: Cada acción del navegador de pisos (agregar, editar, borrar, activar, deshacer) se
+  ve reflejada en pantalla en menos de 0,2 segundos en un proyecto de 10 pisos.
+- **SC-005**: Después de instalar, usar y desinstalar BIM Simple, no queda ningún cambio en la
+  computadora fuera de los archivos que el usuario guardó.
 - **SC-006**: Cada acción de esta función (nuevo, abrir, guardar, agregar, renombrar, cambiar cota
   o altura, borrar y activar piso) se hace con un máximo de 2 clics desde la pantalla principal,
   más la escritura de nombres o números cuando corresponda.
 - **SC-007**: Desde el doble clic en el acceso directo hasta poder pulsar "Nuevo proyecto" pasan
-  menos de 20 segundos.
+  menos de 10 segundos.
 
 ## Supuestos
 
-- Usuario: arquitecto que conoce ArchiCAD y no quiere aprender Blender. Solo Windows 11.
-- BIM Simple usa por dentro Blender 5.2 y Bonsai 0.9.0 sin modificar su código (constitución,
-  Principio III). La copia que lleva el programa es independiente del Blender que el usuario
-  tenga instalado.
-- El archivo de trabajo es el `.ifc`. El formato propio de Blender no se usa para guardar proyectos.
+- Usuario: arquitecto que conoce ArchiCAD. Solo Windows 11.
+- El archivo de trabajo es el `.ifc`; no hay un formato propio de proyecto.
 - Altura por defecto de un piso: 3,00 m. Nombres por defecto: "Planta Baja", "Piso N", "Sótano N".
 - Al borrar un piso, los de arriba no bajan (FR-017). Se eligió así para que borrar nunca mueva
   elementos de otros pisos; si en ArchiCAD funciona distinto y se prefiere ese comportamiento, se
   cambia en el plan.
-- La planta es una vista desde arriba **sin plano de corte**. ArchiCAD corta la planta a una
-  altura; en el MVP anterior el corte ocultaba la previsualización y las cotas de dibujo, así que
-  se dejó fuera. Si hace falta, será otra función.
-- Activar con un clic en lugar de doble clic: en el MVP anterior se comprobó que las listas de
-  Blender no distinguen el doble clic, y el usuario aprobó la alternativa (decisión D6 de
-  `PLAN.md`). Si en el plan se encuentra una forma fiable de detectar el doble clic, se usa.
-- Para usar la interfaz completa de Bonsai, el usuario abre el `.ifc` en su Blender normal con
-  Bonsai.
+- En esta función la planta es una vista desde arriba **sin plano de corte**. El corte a una
+  altura, como en ArchiCAD, y el rayado por capas de material llegan con la función de planos 2D.
+- La navegación aprobada es la del prototipo (`docs/base-tecnologica/prototipo/`).
 - Fuera de esta función: herramientas de dibujo (muro, losa, columna), Info Box, iconos de la caja
   de herramientas, asociar archivos `.ifc` al programa, puertas, ventanas, cubiertas, escaleras,
   cortes, láminas y cómputos.

@@ -39,3 +39,12 @@
 - Se mencionan Blender, Bonsai, IFC4 e `IfcBuildingStorey` porque son la plataforma y el estándar
   que exige la constitución, no decisiones de implementación.
 - Supuesto a confirmar al revisar: al borrar un piso, los de arriba no bajan (FR-017).
+- Iteración 3 (constitución v3.0.0, programa propio sin Blender):
+  - se quitaron los requisitos y supuestos propios de Blender (copia de Blender, D1–D7, activar
+    con un clic);
+  - FR-004 pasa a ser el título de la ventana;
+  - FR-020 activa con doble clic;
+  - se agregó FR-025 (navegación aprobada en el prototipo);
+  - SC-004, SC-005 y SC-007 se ajustaron a la base nueva.
+
+  Todas las comprobaciones siguen pasando.
