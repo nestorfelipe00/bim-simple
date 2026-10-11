@@ -117,8 +117,10 @@ licencia al entrar es mucho más barato que limpiar el producto después.
   (Principio VI).
 - Solo se hace lo pedido: nada de funciones, abstracciones ni archivos extra. Cada función nueva
   entra por su propia especificación (`/speckit-specify`).
-- Se trabaja dentro de la carpeta del proyecto. Las descargas y las copias de trabajo van en una
-  carpeta temporal de ruta corta. NO se modifican `.claude/skills` ni `skills-lock.json`.
+- Se trabaja dentro de la carpeta del proyecto. El entorno de desarrollo (`runtime/` con Python e
+  IfcOpenShell, `app/node_modules/`) vive en el proyecto y se excluye de git. Las descargas sueltas
+  y las copias de prueba van en una carpeta temporal de ruta corta. NO se modifican
+  `.claude/skills` ni `skills-lock.json`.
 
 ## Flujo de trabajo
 
@@ -154,4 +156,4 @@ licencia al entrar es mucho más barato que limpiar el producto después.
     `specs/001-espacio-trabajo-pisos/investigacion/`) sirve como referencia del
     comportamiento IFC. Su código de Bonsai NO se reutiliza (Principio VI).
 
-**Versión**: 3.0.0 | **Ratificada**: 2026-10-11 | **Última enmienda**: 2026-10-11
+**Versión**: 3.0.1 | **Ratificada**: 2026-10-11 | **Última enmienda**: 2026-10-11
