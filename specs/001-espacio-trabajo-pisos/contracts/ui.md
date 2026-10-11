@@ -59,7 +59,10 @@ con este texto exacto:
 1. **Proyecto**: nombre del archivo o "Proyecto sin guardar"; "• Cambios sin guardar" si
    corresponde. Sin proyecto: "No hay ningún proyecto abierto" y los botones **Nuevo proyecto** y
    **Abrir IFC…**.
-2. **Aviso** (`state.notice`) si lo hay.
+2. **Aviso** (`state.notice`) si lo hay:
+   - varios edificios: "El archivo tiene N edificios; se muestran los pisos de «X»";
+   - sin edificio: "Este archivo no tiene un edificio, por eso no hay pisos. El modelo se ve en la vista 3D.";
+   - edificio sin pisos: "Este archivo no tiene pisos. Usa «Agregar piso arriba» para crear el primero.".
 3. **Navegador de pisos**: tabla Piso | Cota | Altura.
    - Valores con dos decimales y coma decimal (`3,00`).
    - El más alto va arriba.

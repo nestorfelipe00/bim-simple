@@ -217,3 +217,51 @@ addSection(async function historia3(t) {
   await t.app.handleAction("fit"); // botón Encuadrar
   await t.capture("h3");
 });
+
+// ---------- Historia 4: abrir un IFC existente ----------
+addSection(async function historia4(t) {
+  const S = "Historia 4";
+  const { folder } = await bim.test.fixtures();
+  const lastDialog = async () => {
+    const log = await bim.test.dialogLog();
+    return log.dialogs[log.dialogs.length - 1];
+  };
+
+  // Hay cambios de la Historia 3: «No guardar» y después el archivo elegido en el diálogo Abrir IFC.
+  await bim.test.answerDialogs(["No guardar", `${folder}\\otro_programa_mm.ifc`]);
+  const opened = await t.app.handleAction("open");
+  t.step(S, "Abrir «otro_programa_mm.ifc» (milímetros): 4 pisos en metros, activo «Nivel 0» (FR-008)",
+    opened && opened.ok && JSON.stringify(t.tableRows()) === JSON.stringify([["Nivel 2", "6,00", "3,00"], ["Nivel 1", "3,20", "2,80"], ["● Nivel 0", "0,00", "3,20"], ["Subsuelo", "-2,80", "2,80"]]),
+    t.tableRows());
+  t.step(S, "Título: «otro_programa_mm.ifc — BIM Simple»", (await bim.test.windowTitle()) === "otro_programa_mm.ifc — BIM Simple", await bim.test.windowTitle());
+
+  // Un archivo dañado no cambia nada (FR-011).
+  const rows = JSON.stringify(t.tableRows());
+  await bim.test.answerDialogs([`${folder}\\danado.ifc`]);
+  const broken = await t.app.handleAction("open");
+  t.step(S, "Abrir «danado.ifc»: mensaje exacto y el proyecto abierto no cambia (FR-011)",
+    broken && !broken.ok && document.getElementById("messages").textContent === "No se pudo abrir «danado.ifc»: no es un archivo IFC válido." && JSON.stringify(t.tableRows()) === rows && (await bim.test.windowTitle()) === "otro_programa_mm.ifc — BIM Simple",
+    document.getElementById("messages").textContent);
+
+  // Aviso de varios edificios en el panel.
+  await bim.test.answerDialogs([`${folder}\\dos_edificios.ifc`]);
+  await t.app.handleAction("open");
+  const notice = document.getElementById("notice");
+  t.step(S, "Aviso en el panel: «El archivo tiene 2 edificios; se muestran los pisos de «Edificio A»»",
+    !notice.hidden && notice.textContent === "El archivo tiene 2 edificios; se muestran los pisos de «Edificio A»", notice.textContent);
+
+  // Pregunta por cambios sin guardar (FR-010): agregar un piso; Abrir IFC… con «Cancelar» y después con «No guardar».
+  await t.app.handleAction("add-above");
+  const changed = JSON.stringify(t.tableRows());
+  await bim.test.answerDialogs(["Cancelar"]);
+  await t.app.handleAction("open");
+  const asked = await lastDialog();
+  t.step(S, "Abrir IFC… con cambios: pregunta «¿Guardar cambios antes de cerrar?» y «Cancelar» no cambia nada",
+    asked && asked.message === "¿Guardar cambios antes de cerrar?" && asked.answer === "Cancelar" && JSON.stringify(t.tableRows()) === changed, asked);
+  await bim.test.answerDialogs(["No guardar", `${folder}\\con_elementos.ifc`]);
+  const reopened = await t.app.handleAction("open");
+  t.step(S, "Con «No guardar» se abre el archivo elegido",
+    reopened && reopened.ok && JSON.stringify(t.tableRows().map((r) => r[0])) === JSON.stringify(["Piso 2", "Piso 1", "● Planta Baja"]) && document.getElementById("notice").hidden,
+    t.tableRows());
+  await t.capture("h4");
+});

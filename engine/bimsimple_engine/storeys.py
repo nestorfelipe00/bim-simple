@@ -71,10 +71,12 @@ def list_storeys(project):
 
 def notice(project):
     found = buildings(project)
+    if not found:
+        return "Este archivo no tiene un edificio, por eso no hay pisos. El modelo se ve en la vista 3D."
     if len(found) > 1:
         return f"El archivo tiene {len(found)} edificios; se muestran los pisos de «{found[0].Name or ''}»"
     if not storey_entities(project):
-        return "Este archivo no tiene pisos"
+        return "Este archivo no tiene pisos. Usa «Agregar piso arriba» para crear el primero."
     return ""
 
 

@@ -256,6 +256,10 @@ ipcMain.handle("quit", () => win && win.close());
 // Solo para la prueba del programa.
 if (TEST) {
   ipcMain.handle("test-capture", async (_event, name) => {
+    // Con la ventana oculta, capturePage devuelve el último cuadro pintado y recién entonces pinta uno nuevo:
+    // la primera captura fuerza el cuadro actual y la segunda lo guarda.
+    await win.webContents.capturePage();
+    await new Promise((resolve) => setTimeout(resolve, 150));
     const image = await win.webContents.capturePage();
     fs.writeFileSync(path.join(TEST_OUTPUT, `${name}.png`), image.toPNG());
     return image.getSize();

@@ -425,7 +425,7 @@ sus elementos y el 3D muestra todos.
 
 ### Pruebas de la Historia 4
 
-- [ ] T043 [US4] En `engine/tests/test_engine.py`:
+- [X] T043 [US4] En `engine/tests/test_engine.py`:
   - **`otro_programa_mm`**: 4 pisos con cotas −2,80 / 0,00 / 3,20 / 6,00 y alturas por distancia; activo "Nivel 0";
     `dirty=False`;
   - **`dos_edificios`, `sin_pisos` y `sin_edificio`**: `notice` con su texto exacto;
@@ -436,21 +436,21 @@ sus elementos y el 3D muestra todos.
 
 ### Implementación de la Historia 4
 
-- [ ] T044 [US4] En `engine/bimsimple_engine/project.py`, la orden `open_project(path)` según research R5:
+- [X] T044 [US4] En `engine/bimsimple_engine/project.py`, la orden `open_project(path)` según research R5:
   1. `ifcopenshell.open` en `try`, exigiendo `IfcProject`; si falla, `EngineError` con el texto exacto, **sin tocar**
      el proyecto abierto;
   2. reemplaza el archivo, `path`, `dirty=False`, y vacía el historial;
   3. activa el piso de cota más cercana a 0,00.
-- [ ] T045 [US4] En `app/src/main/main.js`, **Archivo > Abrir IFC…**: pregunta si hay cambios, abre
+- [X] T045 [US4] En `app/src/main/main.js`, **Archivo > Abrir IFC…**: pregunta si hay cambios, abre
   `dialog.showOpenDialog` con el filtro "Modelo IFC" (`*.ifc`) y llama a `open_project`. En `app.js`, pide todas las
   mallas, encuadra y muestra el error si lo hay.
-- [ ] T046 [US4] En `app/test/window-test.js`, sección "Historia 4":
+- [X] T046 [US4] En `app/test/window-test.js`, sección "Historia 4":
   - abrir `otro_programa_mm.ifc` → 4 filas, activo "Nivel 0";
   - abrir `danado.ifc` → el mensaje exacto y la tabla sin cambios;
   - **pregunta por cambios sin guardar (FR-010)**: agregar un piso; Archivo > Abrir IFC… con "Cancelar" en la cola →
     se registró la pregunta y la tabla no cambió; repetir con "No guardar" → se abre el archivo elegido;
   - captura `h4`.
-- [ ] T047 [US4] Ejecutar las dos pruebas automáticas y mostrar la salida real. Hacer commit.
+- [X] T047 [US4] Ejecutar las dos pruebas automáticas y mostrar la salida real. Hacer commit.
 
 **Punto de control**: las cuatro historias pasan las pruebas automáticas.
 

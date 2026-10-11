@@ -264,3 +264,77 @@ def test_mallas_con_su_piso(project, fixtures):
     esperado = {m.id(): pisos[m.Name.replace("Muro ", "")]["id"] for m in project.file.by_type("IfcWall")}
     assert {i: m["storey_id"] for i, m in muros.items()} == esperado
     assert resultado["failures"] == []
+
+# ---------- Historia 4: abrir un IFC existente ----------
+def _filas(estado):
+    return [(s["name"], s["elevation"], s["height"]) for s in estado["storeys"]]
+
+
+def _hash(ruta):
+    import hashlib
+    with open(ruta, "rb") as archivo:
+        return hashlib.sha256(archivo.read()).hexdigest()
+
+
+def test_abrir_archivo_de_otro_programa_en_mm(project, fixtures):
+    estado = execute(project, "open_project", {"path": fixtures["otro_programa_mm"]})["state"]
+    assert _filas(estado) == [("Nivel 2", 6.0, 3.0), ("Nivel 1", 3.2, 2.8), ("Nivel 0", 0.0, 3.2), ("Subsuelo", -2.8, 2.8)]
+    assert estado["active_storey_id"] == _pisos(project)["Nivel 0"]["id"]
+    assert estado["path"] == fixtures["otro_programa_mm"]
+    assert estado["dirty"] is False and estado["can_undo"] is False and estado["notice"] == ""
+
+
+@pytest.mark.parametrize("nombre, aviso, edificio", [
+    ("dos_edificios", "El archivo tiene 2 edificios; se muestran los pisos de «Edificio A»", True),
+    ("sin_pisos", "Este archivo no tiene pisos. Usa «Agregar piso arriba» para crear el primero.", True),
+    ("sin_edificio", "Este archivo no tiene un edificio, por eso no hay pisos. El modelo se ve en la vista 3D.", False),
+])
+def test_avisos_del_navegador(project, fixtures, nombre, aviso, edificio):
+    estado = execute(project, "open_project", {"path": fixtures[nombre]})["state"]
+    assert estado["notice"] == aviso
+    assert estado["has_building"] is edificio
+    if nombre == "dos_edificios":
+        assert [s["name"] for s in estado["storeys"]] == ["A - PB"]
+    else:
+        assert estado["storeys"] == [] and estado["active_storey_id"] is None
+
+
+def test_abrir_un_archivo_que_no_sirve_no_toca_el_proyecto(project, fixtures, tmp_path):
+    execute(project, "open_project", {"path": fixtures["con_elementos"]})
+    execute(project, "add_storey_above", {})
+    antes = project.state()
+    sin_proyecto = str(tmp_path / "sin_proyecto.ifc")
+    f = ifcopenshell.file(schema="IFC4")
+    f.create_entity("IfcWall", GlobalId=ifcopenshell.guid.new(), Name="Muro suelto")
+    f.write(sin_proyecto)
+    casos = [
+        (fixtures["danado"], "No se pudo abrir «danado.ifc»: no es un archivo IFC válido."),
+        (fixtures["no_es_ifc"], "No se pudo abrir «no_es_ifc.ifc»: no es un archivo IFC válido."),
+        (str(tmp_path / "no_existe.ifc"), "No se pudo abrir «no_existe.ifc»: no es un archivo IFC válido."),
+        (sin_proyecto, "No se pudo abrir «sin_proyecto.ifc»: no contiene un proyecto IFC."),
+    ]
+    for ruta, texto in casos:
+        with pytest.raises(EngineError) as error:
+            execute(project, "open_project", {"path": ruta})
+        assert str(error.value) == texto
+        assert project.state() == antes
+
+
+def test_guardar_como_no_toca_el_original(project, fixtures, tmp_path):
+    original = fixtures["con_elementos"]
+    huella = _hash(original)
+    execute(project, "open_project", {"path": original})
+    execute(project, "add_storey_above", {})
+    copia = str(tmp_path / "copia.ifc")
+    estado = execute(project, "save_project", {"path": copia})["state"]
+    assert _hash(original) == huella
+    assert estado["path"] == copia and estado["dirty"] is False
+
+
+def test_se_conservan_los_elementos_que_no_se_editan(project, fixtures, tmp_path):
+    execute(project, "open_project", {"path": fixtures["con_elementos"]})
+    antes = sorted((e.is_a(), e.Name) for e in project.file.by_type("IfcElement"))
+    ruta = str(tmp_path / "guardado.ifc")
+    execute(project, "save_project", {"path": ruta})
+    despues = sorted((e.is_a(), e.Name) for e in ifcopenshell.open(ruta).by_type("IfcElement"))
+    assert despues == antes and ("IfcDoor", "Puerta") in despues and len(despues) == 4
