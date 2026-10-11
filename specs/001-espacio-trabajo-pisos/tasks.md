@@ -51,15 +51,15 @@ pruebas automáticas en verde y un commit.
 
 **Propósito**: carpetas, versiones fijas, icono y entorno de desarrollo.
 
-- [ ] T001 Crear las carpetas `app/src/main/`, `app/src/renderer/`, `app/test/`, `app/build/`,
+- [X] T001 Crear las carpetas `app/src/main/`, `app/src/renderer/`, `app/test/`, `app/build/`,
   `engine/bimsimple_engine/`, `engine/tests/` y `tools/`. Agregar a `.gitignore`: `runtime/`, `app/node_modules/`,
   `app/dist/` y `app/test-output/`. `__pycache__/` ya está.
-- [ ] T002 [P] Crear `engine/requirements.txt` con estas versiones exactas: `ifcopenshell==0.9.0`, `numpy==2.5.4`,
+- [X] T002 [P] Crear `engine/requirements.txt` con estas versiones exactas: `ifcopenshell==0.9.0`, `numpy==2.5.4`,
   `shapely==2.2.0`, `isodate==0.7.2`, `lark==1.3.1`, `pyparsing==3.3.3`, `python-dateutil==2.9.0.post0`,
   `six==1.17.0`, `typing_extensions==4.16.0`, `pytest==9.1.1`, `iniconfig==2.3.1`, `pluggy==1.6.0`,
   `packaging==26.3`, `Pygments==2.21.0` y `colorama==0.4.6`. Son las instaladas en el prototipo, con licencias
   revisadas en research R10.
-- [ ] T003 [P] Crear `app/package.json` con:
+- [X] T003 [P] Crear `app/package.json` con:
   - `"name": "bim-simple"`, `"productName": "BIM Simple"`, `"version": "0.1.0"`, `"private": true`,
     `"license": "UNLICENSED"`, `"main": "src/main/main.js"`;
   - `dependencies` exactas `"three": "0.186.1"` y `"camera-controls": "3.1.2"`;
@@ -67,11 +67,11 @@ pruebas automáticas en verde y un commit.
   - `scripts`: `"start": "electron ."` y `"test": "electron . --test"`.
 
   Sin `^` ni `~` en las versiones. electron-builder se agrega en T050.
-- [ ] T004 [P] Crear `tools/make_icon.py`, solo con la biblioteca estándar, a partir de
+- [X] T004 [P] Crear `tools/make_icon.py`, solo con la biblioteca estándar, a partir de
   `specs/001-espacio-trabajo-pisos/investigacion/scripts/empaquetado_make_ico.py`.
   - Genera `app/build/icon.ico` con 16, 24, 32, 48 y 256 px (research R9): un edificio simple de color.
   - Se ejecuta con el Python del sistema (`python tools/make_icon.py`), y hay que comprobar que el archivo existe.
-- [ ] T005 Crear `tools/setup-dev.ps1`:
+- [X] T005 Crear `tools/setup-dev.ps1`:
   - **`runtime/python`** (si no existe) se arma de una de dos formas:
     - **A**: copiando `%TEMP%\bsproto\python`, después de comprobar `python.exe --version` = 3.14.7 e
       `import ifcopenshell; ifcopenshell.version` = 0.9.0;
@@ -87,7 +87,7 @@ pruebas automáticas en verde y un commit.
   - **`app/node_modules`**: `npm --prefix app install --no-audit --no-fund` y después
     `node app/node_modules/electron/install.js` (npm 11 no corre ese paso).
   - **Salida**: una línea `OK`/`ERROR` por paso, y al final las versiones de Python, IfcOpenShell, Electron y Three.js.
-- [ ] T006 ⛔ PERMISO: pedir permiso y ejecutar `powershell -ExecutionPolicy Bypass -File tools/setup-dev.ps1`. Usar
+- [X] T006 ⛔ PERMISO: pedir permiso y ejecutar `powershell -ExecutionPolicy Bypass -File tools/setup-dev.ps1`. Usar
   la opción A (copia del prototipo, ya autorizada); la B solo si el usuario la autoriza. Mostrar la salida real.
 
 ---
@@ -98,7 +98,7 @@ pruebas automáticas en verde y un commit.
 
 **⚠️ Ninguna historia puede empezar hasta terminar esta fase.**
 
-- [ ] T007 Crear el protocolo del motor en `engine/bimsimple_engine/__init__.py`, `__main__.py` y `commands.py`,
+- [X] T007 Crear el protocolo del motor en `engine/bimsimple_engine/__init__.py`, `__main__.py` y `commands.py`,
   según [core_api.md](contracts/core_api.md) "Mensajes" y la función `main()` del prototipo:
   - al arrancar, una sola línea `{"id": 0, "ok": true, "result": {"ready": true, "ifcopenshell": …, "import_ms": …}}`;
   - una línea JSON por orden, tolerando el BOM;
@@ -108,7 +108,7 @@ pruebas automáticas en verde y un commit.
   - el campo `ms` en cada respuesta;
   - orden desconocida: "Orden desconocida: <cmd>";
   - tabla de órdenes en `commands.py`.
-- [ ] T008 Crear `engine/bimsimple_engine/project.py` con la clase `Project`:
+- [X] T008 Crear `engine/bimsimple_engine/project.py` con la clase `Project`:
   - **datos**: el `ifcopenshell.file`, `path`, `dirty`, `active_storey_id`;
   - **`transaction(fn)`**: `begin_transaction` / `end_transaction`, y `discard_transaction` si hay error; marca
     `dirty = True`;
@@ -116,14 +116,14 @@ pruebas automáticas en verde y un commit.
   - **`unit_scale()`**;
   - **`state()`** con la forma exacta de `State` de [core_api.md](contracts/core_api.md): `has_project`, `path`,
     `dirty`, `storeys`, `active_storey_id`, `notice`, `can_undo` (`len(file.history) > 0`) y `can_redo`.
-- [ ] T009 [P] Crear `engine/bimsimple_engine/geometry.py`, con la orden `meshes(ids=None)` según data-model §5:
+- [X] T009 [P] Crear `engine/bimsimple_engine/geometry.py`, con la orden `meshes(ids=None)` según data-model §5:
   - con `ids`: `ifcopenshell.geom.create_shape(settings, element)`; sin `ids`:
     `ifcopenshell.geom.iterator(settings, file, multiprocessing.cpu_count())`;
   - `settings.set("use-world-coords", True)`, sin `enable-layerset-slicing` (falla con "Unexpected topology",
     RESULTADOS del prototipo);
   - `vertices` en base64 de `float32` y `faces` en base64 de `uint32`;
   - incluye `ifc_class`, `storey_id` (con `ifcopenshell.util.element.get_container`), `existing_ids` y `failures`.
-- [ ] T010 [P] Crear `engine/tests/conftest.py` con:
+- [X] T010 [P] Crear `engine/tests/conftest.py` con:
   - la fixture `project` (un `Project` nuevo por prueba) y la fixture `run_engine`, que lanza
     `runtime/python/python.exe -m bimsimple_engine` y le manda órdenes reales;
   - **generadores de IFC en `tmp_path`**, con la lógica de
@@ -137,13 +137,13 @@ pruebas automáticas en verde y un commit.
   - el módulo `engine/tests/make_fixtures.py` (`python -m tests.make_fixtures <carpeta>`), que escribe los mismos
     archivos para la prueba del programa; y `engine/tests/__init__.py`, para que `tests` se pueda importar como
     paquete.
-- [ ] T011 Crear `engine/tests/test_engine.py` con las pruebas del protocolo, usando `run_engine`:
+- [X] T011 Crear `engine/tests/test_engine.py` con las pruebas del protocolo, usando `run_engine`:
   - el mensaje `id 0` con `ready`;
   - el texto exacto de una orden desconocida;
   - el texto exacto de una orden sin proyecto: "No hay ningún proyecto abierto.";
   - una línea con BOM se acepta;
   - toda respuesta tiene `ms`.
-- [ ] T012 Crear `app/src/main/engine.js`:
+- [X] T012 Crear `app/src/main/engine.js`:
   - lanza Python (desarrollo: `<repo>/runtime/python/python.exe`; instalado:
     `path.join(process.resourcesPath, "python", "python.exe")`) con `["-u", "-m", "bimsimple_engine"]` y
     `windowsHide: true`;
@@ -152,14 +152,14 @@ pruebas automáticas en verde y un commit.
   - **si el motor se cae** (evento `exit` sin pedido de cierre): rechaza las órdenes pendientes, avisa a la ventana
     con el texto exacto de [ui.md](contracts/ui.md) "Motor detenido" y lo reinicia;
   - `stop()` para el cierre normal.
-- [ ] T013 [P] Crear `app/src/preload.js` con `contextBridge.exposeInMainWorld("bim", …)`:
+- [X] T013 [P] Crear `app/src/preload.js` con `contextBridge.exposeInMainWorld("bim", …)`:
   - órdenes: `engine(cmd, args)`;
   - diálogos: `openIfc()`, `saveIfcAs()`, `confirmDelete(nombre, n)`, `askSaveChanges()`;
   - avisos y menú: `onMenu(fn)`, `onNotice(fn)`, `onState(fn)`;
   - para la prueba: `capture(nombre)` y `finishTest(resultado)`.
 
   Nada de Node en la página.
-- [ ] T014 Crear `app/src/main/main.js`:
+- [X] T014 Crear `app/src/main/main.js`:
   - `app.setAppUserModelId("BIMSimple.BIMSimple")`;
   - ventana 1400 × 860 con `contextIsolation`, `nodeIntegration: false`, `sandbox: true` e icono
     `app/build/icon.ico`; se cancela `page-title-updated`;
@@ -179,13 +179,13 @@ pruebas automáticas en verde y un commit.
     En este modo, **todos** los diálogos nativos (pregunta de guardar, confirmar borrado, Acerca de) se reemplazan
     por uno que registra el título y el mensaje en `resultado.json` y responde lo que diga una **cola de respuestas**
     que arma el arnés (por defecto, "No guardar" o "Borrar").
-- [ ] T015 [P] Crear `app/src/renderer/index.html` y `styles.css` con la pantalla de [ui.md](contracts/ui.md):
+- [X] T015 [P] Crear `app/src/renderer/index.html` y `styles.css` con la pantalla de [ui.md](contracts/ui.md):
   - planta | 3D | panel de ~290 px;
   - CSP `default-src 'self'`;
   - import map para `three`, `three/addons/` y `camera-controls`, desde `../../node_modules/…`.
 
   Estilos a partir del prototipo.
-- [ ] T016 [P] Crear `app/src/renderer/viewports.js` a partir del prototipo (research R7):
+- [X] T016 [P] Crear `app/src/renderer/viewports.js` a partir del prototipo (research R7):
   - un `WebGLRenderer` con dos zonas (`setScissor`);
   - **planta**: `OrthographicCamera` + `MapControls` con `enableRotate=false`, `zoomToCursor=true` y
     `mouseButtons {LEFT:-1, MIDDLE:PAN, RIGHT:-1}`;
@@ -195,15 +195,15 @@ pruebas automáticas en verde y un commit.
   - `THREE.Timer` en el ciclo de dibujo;
   - funciones `setStoreyGroups(map)`, `setActiveStorey(id)` (la planta muestra solo ese grupo) y `fit()` (Encuadrar);
   - para la prueba: `debugVisiblePlanStoreys()`.
-- [ ] T017 [P] Crear `app/src/renderer/meshes.js`: decodifica `vertices` y `faces` de base64; crea `Mesh` con
+- [X] T017 [P] Crear `app/src/renderer/meshes.js`: decodifica `vertices` y `faces` de base64; crea `Mesh` con
   `EdgesGeometry`, agrupados por `storey_id`; quita por `deleted_ids` o los que no estén en `existing_ids`.
-- [ ] T018 Crear `app/src/renderer/app.js`:
+- [X] T018 Crear `app/src/renderer/app.js`:
   - un solo despachador de órdenes que reemplaza el estado con cada respuesta;
   - pide las mallas que cambiaron (`changed_ids`) o todas (después de nuevo, abrir, deshacer y rehacer);
   - muestra los errores en el área de mensajes;
   - al arrancar espera el `ready` del motor;
   - con `?test=1`, carga `app/test/window-test.js`.
-- [ ] T019 Crear el arnés de `app/test/window-test.js`:
+- [X] T019 Crear el arnés de `app/test/window-test.js`:
   - pasos con nombre, `ok`, `ms` y error;
   - una captura de calentamiento antes de la primera, porque la ventana oculta devuelve un cuadro viejo;
   - `resultado.json` con los pasos, las capturas y `RESULTADO: TODO OK` o `N FALLAS`, que termina con código 1;
@@ -214,7 +214,7 @@ pruebas automáticas en verde y un commit.
     - los textos de los menús según [ui.md](contracts/ui.md);
     - al arrancar no hay proyecto, la tabla está vacía con "No hay ningún proyecto abierto" y no hay mallas en
       la escena (FR-006).
-- [ ] T020 Ejecutar `runtime\python\python.exe -m pytest engine\tests -q` y `npm --prefix app test`. Mostrar la
+- [X] T020 Ejecutar `runtime\python\python.exe -m pytest engine\tests -q` y `npm --prefix app test`. Mostrar la
   salida real: la base pasa. Hacer commit de las fases 1 y 2.
 
 **Punto de control**: el programa arranca con la ventana oculta, el motor responde y las pruebas base pasan.

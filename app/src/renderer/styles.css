@@ -1,0 +1,52 @@
+:root {
+  --fondo: #f4f4f2;
+  --panel: #ffffff;
+  --borde: #d6d3cd;
+  --texto: #26231f;
+  --tenue: #6f6a62;
+  --acento: #1e5aa0;
+  --activo: #e8f0fa;
+  --seleccion: #f3efe6;
+  --aviso: #a4501a;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; font: 13px "Segoe UI", system-ui, sans-serif; color: var(--texto); background: var(--fondo); }
+body { display: flex; overflow: hidden; }
+
+#views { position: relative; flex: 1; min-width: 0; }
+#canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.view { position: absolute; top: 0; bottom: 0; width: 50%; }
+#plan-view { left: 0; border-right: 1px solid var(--borde); }
+#view-3d { right: 0; }
+.view-label { position: absolute; top: 8px; left: 10px; padding: 3px 8px; background: rgba(255, 255, 255, 0.88); border: 1px solid var(--borde); border-radius: 4px; font-size: 12px; pointer-events: none; }
+
+#panel { width: 290px; flex: none; background: var(--panel); border-left: 1px solid var(--borde); display: flex; flex-direction: column; gap: 8px; padding: 12px; overflow-y: auto; }
+h1 { font-size: 15px; margin: 0; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--tenue); margin: 8px 0 4px; }
+#project { color: var(--tenue); }
+#project .dirty { color: var(--aviso); }
+#notice { padding: 6px 8px; background: #fff6e8; border: 1px solid #f0d9b5; border-radius: 4px; font-size: 12px; }
+
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-weight: 600; color: var(--tenue); font-size: 11px; padding: 3px 4px; border-bottom: 1px solid var(--borde); }
+td { padding: 5px 4px; border-bottom: 1px solid #eeece8; cursor: default; user-select: none; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr.selected td { background: var(--seleccion); }
+tr.active td { background: var(--activo); font-weight: 600; }
+.help { margin: 2px 0 0; font-size: 12px; color: var(--tenue); }
+
+.buttons, #no-project-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+button { font: inherit; padding: 6px 8px; border: 1px solid var(--borde); background: #fafaf8; border-radius: 4px; cursor: pointer; }
+button:hover:not(:disabled) { background: #f0efeb; }
+button:disabled { color: #aaa59c; cursor: default; }
+
+#messages { margin-top: auto; border-top: 1px solid var(--borde); padding-top: 8px; font-size: 12px; color: var(--tenue); white-space: pre-line; min-height: 2.5em; }
+#messages.error { color: #b3261e; }
+
+dialog { border: 1px solid var(--borde); border-radius: 6px; padding: 16px; width: 300px; }
+dialog::backdrop { background: rgba(0, 0, 0, 0.15); }
+dialog label { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 8px 0; }
+dialog input { width: 150px; font: inherit; padding: 4px 6px; border: 1px solid var(--borde); border-radius: 4px; }
+.dialog-buttons { display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px; }
+.error { color: #b3261e; font-size: 12px; }

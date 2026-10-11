@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'; img-src 'self' data:">
+  <title>BIM Simple</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "../../node_modules/three/build/three.module.js",
+        "three/addons/": "../../node_modules/three/examples/jsm/",
+        "camera-controls": "../../node_modules/camera-controls/dist/camera-controls.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main id="views">
+    <canvas id="canvas"></canvas>
+    <div id="plan-view" class="view"><span class="view-label" id="plan-label">Planta</span></div>
+    <div id="view-3d" class="view"><span class="view-label">Vista 3D</span></div>
+  </main>
+
+  <aside id="panel">
+    <h1>BIM Simple</h1>
+    <div id="project"></div>
+    <div id="notice" hidden></div>
+    <div id="no-project-actions">
+      <button id="btn-new">Nuevo proyecto</button>
+      <button id="btn-open">Abrir IFC…</button>
+    </div>
+
+    <section id="navigator" hidden>
+      <h2>Navegador de pisos</h2>
+      <table>
+        <thead><tr><th>Piso</th><th class="num">Cota</th><th class="num">Altura</th></tr></thead>
+        <tbody id="storeys"></tbody>
+      </table>
+      <p class="help">Doble clic en un piso para activarlo.</p>
+      <div class="buttons">
+        <button id="btn-add-above">Agregar piso arriba</button>
+        <button id="btn-add-below">Agregar piso abajo</button>
+        <button id="btn-edit">Editar piso…</button>
+        <button id="btn-delete">Borrar piso</button>
+        <button id="btn-fit">Encuadrar</button>
+      </div>
+    </section>
+
+    <div id="messages" role="status"></div>
+  </aside>
+
+  <dialog id="edit-dialog">
+    <form method="dialog" id="edit-form">
+      <h2>Editar piso</h2>
+      <label>Nombre <input id="edit-name" type="text" autocomplete="off"></label>
+      <label>Cota (m) <input id="edit-elevation" type="text" inputmode="decimal" autocomplete="off"></label>
+      <label>Altura (m) <input id="edit-height" type="text" inputmode="decimal" autocomplete="off"></label>
+      <p id="edit-error" class="error" hidden></p>
+      <div class="dialog-buttons">
+        <button value="cancel" id="edit-cancel" formnovalidate>Cancelar</button>
+        <button value="ok" id="edit-ok">Aceptar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

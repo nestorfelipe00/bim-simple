@@ -43,6 +43,7 @@ Lo devuelven `state` y todas las órdenes que cambian algo (en `result.state`).
 ```jsonc
 {
   "has_project": true,
+  "has_building": true,              // false si el archivo no tiene IfcBuilding (no se pueden agregar pisos)
   "path": "C:\\…\\Casa.ifc",        // "" si nunca se guardó
   "dirty": true,                     // cambios sin guardar
   "storeys": [                       // de mayor a menor cota

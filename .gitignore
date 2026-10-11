@@ -5,3 +5,10 @@ __pycache__/
 # Herramientas locales de Claude Code (skills de terceros)
 .claude/
 skills-lock.json
+
+# Entorno de desarrollo y salidas (constitución v3.0.1)
+runtime/
+app/node_modules/
+app/dist/
+app/test-output/
+*.log

@@ -1,0 +1,20 @@
+{
+  "name": "bim-simple",
+  "productName": "BIM Simple",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BIM Simple: modelado BIM sobre IFC",
+  "license": "UNLICENSED",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "electron . --test"
+  },
+  "dependencies": {
+    "camera-controls": "3.1.2",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "electron": "44.4.5"
+  }
+}
