@@ -78,3 +78,146 @@ def test_guardar_sin_ruta(project):
     execute(project, "new_project", {})
     with pytest.raises(EngineError, match="^Elige dónde guardar el proyecto.$"):
         execute(project, "save_project", {})
+
+
+# ---------- Historia 2: organizar los pisos ----------
+def _abrir(project, ruta):
+    """Carga un IFC de prueba sin pasar por open_project (Historia 4)."""
+    project.replace_file(ifcopenshell.open(ruta), ruta)
+
+
+def _pisos(project):
+    return {s["name"]: s for s in project.state()["storeys"]}
+
+
+def _z_mundo(elemento):
+    import ifcopenshell.util.placement as up
+    return round(float(up.get_local_placement(elemento.ObjectPlacement)[2][3]), 4)
+
+
+def _sin_contadores(estado):
+    return {k: v for k, v in estado.items() if k not in ("can_undo", "can_redo", "dirty")}
+
+
+def test_agregar_arriba_y_abajo(project):
+    execute(project, "new_project", {})
+    execute(project, "add_storey_above", {})
+    estado = execute(project, "add_storey_above", {})["state"]
+    estado = execute(project, "add_storey_below", {})["state"]
+    filas = [(s["name"], s["elevation"], s["height"]) for s in estado["storeys"]]
+    assert filas == [("Piso 2", 6.0, 3.0), ("Piso 1", 3.0, 3.0), ("Planta Baja", 0.0, 3.0), ("Sótano 1", -3.0, 3.0)]
+    assert estado["dirty"] is True and estado["can_undo"] is True
+
+
+def test_altura_mueve_pisos_de_arriba_con_sus_elementos(project, fixtures):
+    _abrir(project, fixtures["con_elementos"])
+    pisos = _pisos(project)
+    resultado = execute(project, "edit_storey", {"id": pisos["Planta Baja"]["id"], "height": 3.5})
+    pisos = _pisos(project)
+    assert (pisos["Planta Baja"]["height"], pisos["Piso 1"]["elevation"], pisos["Piso 2"]["elevation"]) == (3.5, 3.5, 6.5)
+    muros = {m.Name: _z_mundo(m) for m in project.file.by_type("IfcWall")}
+    assert muros == {"Muro Planta Baja": 0.0, "Muro Piso 1": 3.5, "Muro Piso 2": 6.5}
+    assert set(resultado["changed_ids"]) >= {m.id() for m in project.file.by_type("IfcWall") if m.Name != "Muro Planta Baja"}
+
+
+def test_cota_mueve_el_piso_y_los_de_arriba(project, fixtures):
+    _abrir(project, fixtures["con_elementos"])
+    pisos = _pisos(project)
+    execute(project, "edit_storey", {"id": pisos["Piso 1"]["id"], "elevation": 3.2})
+    pisos = _pisos(project)
+    assert (pisos["Planta Baja"]["height"], pisos["Piso 1"]["elevation"], pisos["Piso 2"]["elevation"]) == (3.2, 3.2, 6.2)
+    assert {m.Name: _z_mundo(m) for m in project.file.by_type("IfcWall")}["Muro Piso 2"] == 6.2
+
+
+def test_rechazos_con_su_texto(project):
+    execute(project, "new_project", {})
+    piso1 = execute(project, "add_storey_above", {})["storey_id"]
+    planta_baja = _pisos(project)["Planta Baja"]["id"]
+    casos = [
+        ({"id": piso1, "elevation": 0.0}, "La cota debe ser mayor que la del piso de abajo («Planta Baja», 0,00 m)."),
+        ({"id": piso1, "height": 0}, "La altura debe ser mayor que 0."),
+        ({"id": piso1, "name": "   "}, "El nombre del piso no puede quedar vacío."),
+    ]
+    antes = project.state()
+    for args, texto in casos:
+        with pytest.raises(EngineError) as error:
+            execute(project, "edit_storey", args)
+        assert str(error.value) == texto
+    assert project.state() == antes
+    execute(project, "delete_storey", {"id": piso1})
+    with pytest.raises(EngineError, match="^No se puede borrar el único piso del edificio.$"):
+        execute(project, "delete_storey", {"id": planta_baja})
+
+
+def test_nombres_repetidos(project):
+    execute(project, "new_project", {})
+    piso1 = execute(project, "add_storey_above", {})["storey_id"]
+    execute(project, "edit_storey", {"id": piso1, "name": "Planta Baja"})
+    assert [s["name"] for s in project.state()["storeys"]] == ["Planta Baja", "Planta Baja"]
+
+
+def test_borrar_piso_con_elementos(project, fixtures):
+    _abrir(project, fixtures["con_elementos"])
+    pisos = _pisos(project)
+    project.active_storey_id = pisos["Piso 1"]["id"]
+    assert execute(project, "count_storey_elements", {"id": pisos["Piso 1"]["id"]})["count"] == 1
+    resultado = execute(project, "delete_storey", {"id": pisos["Piso 1"]["id"]})
+    estado = resultado["state"]
+    assert [s["name"] for s in estado["storeys"]] == ["Piso 2", "Planta Baja"]
+    assert estado["active_storey_id"] == pisos["Planta Baja"]["id"]  # pasa al de abajo
+    assert [e for e in project.file.by_type("IfcElement") if not ue.get_container(e)] == []
+    assert pisos["Piso 1"]["id"] in resultado["deleted_ids"]
+    assert _pisos(project)["Planta Baja"]["height"] == 6.0  # mide hasta el siguiente; los de arriba no se mueven
+    assert ue.get_psets(project.file.by_id(pisos["Planta Baja"]["id"]), qtos_only=True)["Qto_BuildingStoreyBaseQuantities"]["GrossHeight"] == 6.0
+
+
+def test_deshacer_y_rehacer(project, fixtures):
+    _abrir(project, fixtures["con_elementos"])
+    inicial = _sin_contadores(project.state())
+    pisos = _pisos(project)
+    acciones = [
+        ("add_storey_above", {}),
+        ("edit_storey", {"id": pisos["Planta Baja"]["id"], "height": 3.5, "name": "PB"}),
+        ("delete_storey", {"id": pisos["Piso 2"]["id"]}),
+    ]
+    estados = [inicial]
+    for cmd, args in acciones:
+        execute(project, cmd, args)
+        estados.append(_sin_contadores(project.state()))
+    for esperado in reversed(estados[:-1]):
+        execute(project, "undo", {})
+        assert _sin_contadores(project.state()) == esperado
+    for esperado in estados[1:]:
+        execute(project, "redo", {})
+        assert _sin_contadores(project.state()) == esperado
+    assert project.state()["dirty"] is True
+    with pytest.raises(EngineError, match="^No hay nada que rehacer.$"):
+        execute(project, "redo", {})
+
+
+def test_guardar_y_reabrir_pisos(project, tmp_path):
+    import ifcopenshell.util.placement as up
+    execute(project, "new_project", {})
+    execute(project, "add_storey_above", {})
+    piso2 = execute(project, "add_storey_above", {})["storey_id"]
+    execute(project, "edit_storey", {"id": piso2, "name": "Azotea", "height": 2.5})
+    ruta = str(tmp_path / "pisos.ifc")
+    execute(project, "save_project", {"path": ruta})
+    f = ifcopenshell.open(ruta)
+    datos = {s.Name: (s.Elevation, round(float(up.get_local_placement(s.ObjectPlacement)[2][3]), 4),
+                      ue.get_psets(s, qtos_only=True)["Qto_BuildingStoreyBaseQuantities"]["GrossHeight"])
+             for s in f.by_type("IfcBuildingStorey")}
+    assert datos == {"Planta Baja": (0.0, 0.0, 3.0), "Piso 1": (3.0, 3.0, 3.0), "Azotea": (6.0, 6.0, 2.5)}
+    assert execute(project, "validate_file", {"path": ruta})["errors"] == 0
+
+
+def test_tiempo_con_diez_pisos(project):
+    import time
+    execute(project, "new_project", {})
+    for _ in range(9):
+        execute(project, "add_storey_above", {})
+    planta_baja = _pisos(project)["Planta Baja"]["id"]
+    for cmd, args in (("add_storey_above", {}), ("edit_storey", {"id": planta_baja, "height": 3.2}), ("undo", {}), ("redo", {})):
+        inicio = time.perf_counter()
+        execute(project, cmd, args)
+        assert (time.perf_counter() - inicio) * 1000 < 50, cmd

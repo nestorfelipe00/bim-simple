@@ -43,6 +43,11 @@ export async function run(app) {
     await bim.test.capture("calentamiento"); // la primera captura de una ventana oculta devuelve un cuadro viejo
     await environment(t);
     for (const section of SECTIONS) await section(t);
+    if (result.closeWithChanges) {
+      // Deja un proyecto con cambios sin guardar para el último paso: cerrar con la X (FR-010).
+      await app.handleAction("new");
+      await app.handleAction("add-above");
+    }
   } catch (error) {
     t.step("Error", "Excepción durante la prueba", false, String((error && error.stack) || error));
   }
@@ -103,4 +108,59 @@ addSection(async function historia1Panel(t) {
   const S = "Historia 1";
   const actions = document.getElementById("no-project-actions");
   t.step(S, "Con proyecto abierto se ocultan «Nuevo proyecto» y «Abrir IFC…» del panel (ui.md)", getComputedStyle(actions).display === "none");
+});
+
+// ---------- Historia 2: organizar los pisos ----------
+async function editSelected(t, rowName, values) {
+  // Selecciona la fila con un clic, abre "Editar piso…", completa el diálogo y pulsa Aceptar.
+  const row = [...document.querySelectorAll("#storeys tr")].find((tr) => tr.firstChild.textContent.replace("● ", "") === rowName);
+  row.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  const pending = t.app.handleAction("edit");
+  await sleep(50);
+  for (const [field, value] of Object.entries(values)) document.getElementById(`edit-${field}`).value = value;
+  const started = performance.now();
+  document.getElementById("edit-ok").click();
+  const response = await pending;
+  // SC-004 mide la acción (orden, respuesta y redibujo: total_ms de dispatch). El cierre del diálogo en una
+  // ventana oculta llega con ~1 s de retraso por cómo Chromium agenda esas tareas; se registra aparte.
+  return { response, ms: response ? response.total_ms : null, withDialogMs: Math.round(performance.now() - started) };
+}
+
+addSection(async function historia2(t) {
+  const S = "Historia 2";
+  await t.app.handleAction("new");
+  await t.navigatorAction(S, "Agregar piso arriba", () => t.app.handleAction("add-above"), (r) => r.ok);
+  await t.navigatorAction(S, "Agregar piso arriba", () => t.app.handleAction("add-above"), (r) => r.ok);
+  await t.navigatorAction(S, "Agregar piso abajo", () => t.app.handleAction("add-below"), (r) => r.ok);
+  const expected = [["Piso 2", "6,00", "3,00"], ["Piso 1", "3,00", "3,00"], ["● Planta Baja", "0,00", "3,00"], ["Sótano 1", "-3,00", "3,00"]];
+  t.step(S, "Cuatro pisos en orden, el más alto arriba (FR-012 a FR-014)", JSON.stringify(t.tableRows()) === JSON.stringify(expected), t.tableRows());
+
+  const edit = await editSelected(t, "Planta Baja", { height: "3,50" });
+  t.step(S, `Editar piso: altura de Planta Baja 3,50 → Piso 1 a 3,50 y Piso 2 a 6,50 (FR-016) (${edit.ms} ms)`,
+    edit.response.ok && edit.ms <= 200 && JSON.stringify(t.tableRows().slice(0, 3)) === JSON.stringify([["Piso 2", "6,50", "3,00"], ["Piso 1", "3,50", "3,00"], ["● Planta Baja", "0,00", "3,50"]]), t.tableRows());
+
+  const before = JSON.stringify(t.tableRows());
+  const invalid = await editSelected(t, "Piso 1", { elevation: "0,00" });
+  t.step(S, "Cota inválida: mensaje exacto y la tabla no cambia",
+    !invalid.response.ok && document.getElementById("messages").textContent === "La cota debe ser mayor que la del piso de abajo («Planta Baja», 0,00 m)." && JSON.stringify(t.tableRows()) === before,
+    document.getElementById("messages").textContent);
+
+  const sotano = [...document.querySelectorAll("#storeys tr")].find((tr) => tr.firstChild.textContent === "Sótano 1");
+  sotano.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  await t.navigatorAction(S, "Borrar «Sótano 1» (sin elementos, sin preguntar)", () => t.app.handleAction("delete"), (r) => r.ok && t.tableRows().length === 3);
+
+  await t.navigatorAction(S, "Edición > Deshacer: vuelve «Sótano 1»", () => t.app.handleAction("undo"), (r) => r.ok && t.tableRows().length === 4);
+  await t.navigatorAction(S, "Edición > Rehacer: se borra de nuevo", () => t.app.handleAction("redo"), (r) => r.ok && t.tableRows().length === 3);
+  t.step(S, "Título con cambios sin guardar empieza con «* »", (await bim.test.windowTitle()).startsWith("* "), await bim.test.windowTitle());
+
+  // Pregunta por cambios sin guardar (FR-010): Nuevo proyecto + Cancelar no cambia nada.
+  const rows = JSON.stringify(t.tableRows());
+  await bim.test.answerDialogs(["Cancelar"]);
+  await t.app.handleAction("new");
+  const log = await bim.test.dialogLog();
+  const last = log.dialogs[log.dialogs.length - 1];
+  t.step(S, "Nuevo proyecto con cambios: pregunta «¿Guardar cambios antes de cerrar?» y «Cancelar» no cambia nada",
+    last && last.message === "¿Guardar cambios antes de cerrar?" && last.answer === "Cancelar" && JSON.stringify(t.tableRows()) === rows, last);
+  await t.capture("h2");
+  t.result.closeWithChanges = true; // el último paso de la prueba cierra la ventana con cambios (lo registra el proceso principal)
 });

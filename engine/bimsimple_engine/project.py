@@ -122,3 +122,29 @@ def validate_file(project, path):
     ifcopenshell.validate.validate(path, logger, express_rules=True)
     errors = [s for s in logger.statements if s.get("level") == "error"]
     return {"errors": len(errors), "messages": [str(s.get("message"))[:200] for s in errors[:5]]}
+
+
+def _keep_active_storey(project):
+    """Si el piso activo dejó de existir (deshacer/rehacer), pasa al de cota más cercana a 0,00."""
+    if project.active_storey_id not in [s["id"] for s in storeys.ordered(project)]:
+        project.active_storey_id = storeys.nearest_to_zero(project)
+
+
+def undo(project):
+    project.require_project()
+    if not project.file.history:
+        raise EngineError("No hay nada que deshacer.")
+    project.file.undo()
+    project.dirty = True
+    _keep_active_storey(project)
+    return {"state": project.state()}
+
+
+def redo(project):
+    project.require_project()
+    if not project.file.future:
+        raise EngineError("No hay nada que rehacer.")
+    project.file.redo()
+    project.dirty = True
+    _keep_active_storey(project)
+    return {"state": project.state()}

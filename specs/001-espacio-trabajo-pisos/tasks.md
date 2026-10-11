@@ -304,7 +304,7 @@ reabrir: mismos nombres, cotas y alturas.
 
 ### Pruebas de la Historia 2
 
-- [ ] T030 [US2] En `engine/tests/test_engine.py`, agregar las pruebas de la Historia 2:
+- [X] T030 [US2] En `engine/tests/test_engine.py`, agregar las pruebas de la Historia 2:
   - **Escenarios** 1 a 5 de spec.md, con los valores exactos: "Piso 1" a 3,00 y "Sótano 1" a −3,00; altura de
     Planta Baja 3,50 → Piso 1 a 3,50 y Piso 2 a 6,50.
   - **Con `con_elementos`**:
@@ -321,7 +321,7 @@ reabrir: mismos nombres, cotas y alturas.
 
 ### Implementación de la Historia 2
 
-- [ ] T031 [US2] En `engine/bimsimple_engine/storeys.py`, implementar cada orden en **una** transacción, con las
+- [X] T031 [US2] En `engine/bimsimple_engine/storeys.py`, implementar cada orden en **una** transacción, con las
   recetas de research R4 (`verif_pisos.py`) y estas reglas de data-model §3:
   - **`add_storey_above`**: «Cota = cota del más alto + su altura. Altura = la del más alto. Nombre "Piso N"
     (N = pisos con cota > 0 contando el nuevo).»
@@ -342,12 +342,12 @@ reabrir: mismos nombres, cotas y alturas.
     después del piso; activa el inferior o, si no hay, el superior; devuelve `deleted_ids`.
 
   Textos de error exactos de [core_api.md](contracts/core_api.md).
-- [ ] T032 [US2] En `engine/bimsimple_engine/project.py`, las órdenes `undo` y `redo` (`file.undo()` /
+- [X] T032 [US2] En `engine/bimsimple_engine/project.py`, las órdenes `undo` y `redo` (`file.undo()` /
   `file.redo()`):
   - `dirty=True`;
   - si el piso activo dejó de existir, pasa al de cota más cercana a 0,00;
   - textos "No hay nada que deshacer." / "No hay nada que rehacer.".
-- [ ] T033 [US2] En `app/src/renderer/storey-panel.js`:
+- [X] T033 [US2] En `app/src/renderer/storey-panel.js`:
   - **un clic** selecciona la fila;
   - **botones**: Agregar piso arriba, Agregar piso abajo, Editar piso… y Borrar piso, que se desactivan según
     [ui.md](contracts/ui.md);
@@ -355,10 +355,10 @@ reabrir: mismos nombres, cotas y alturas.
     `edit_storey` con lo que cambió;
   - **Borrar piso**: si `count_storey_elements > 0`, `bim.confirmDelete` muestra el diálogo nativo «El piso «X»
     tiene N elementos. Se borrarán junto con el piso.» con [Borrar] / [Cancelar].
-- [ ] T034 [US2] En `app/src/main/main.js`, la confirmación de borrado (`dialog.showMessageBox`) y Edición >
+- [X] T034 [US2] En `app/src/main/main.js`, la confirmación de borrado (`dialog.showMessageBox`) y Edición >
   Deshacer / Rehacer (Ctrl+Z / Ctrl+Y). En `app/src/renderer/app.js`, actualizar las mallas con `changed_ids` /
   `deleted_ids`.
-- [ ] T035 [US2] En `app/test/window-test.js`, sección "Historia 2":
+- [X] T035 [US2] En `app/test/window-test.js`, sección "Historia 2":
   - agregar arriba dos veces y abajo una → la tabla tiene 4 filas en el orden correcto;
   - editar la Planta Baja con altura 3,50 desde el diálogo → los valores de la tabla;
   - una cota inválida → el mensaje exacto y la tabla sin cambios;
@@ -370,7 +370,7 @@ reabrir: mismos nombres, cotas y alturas.
     - con cambios, cerrar la ventana y la respuesta "No guardar" → se registró la pregunta y la ventana se cerró
       (último paso de la prueba);
   - captura `h2`.
-- [ ] T036 [US2] Ejecutar las dos pruebas automáticas y mostrar la salida real. Hacer commit.
+- [X] T036 [US2] Ejecutar las dos pruebas automáticas y mostrar la salida real. Hacer commit.
 
 **Punto de control**: las Historias 1 y 2 funcionan.
 
