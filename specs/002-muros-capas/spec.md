@@ -175,6 +175,9 @@ altura a 3,60: solo esa capa cambia. Borrar la capa interior: quedan 2. Guardar 
   una esquina (research R10).
 - **Dibujar desde el extremo de una capa separada que tiene su esquina cortada**: el muro nuevo llega a
   tope, sin unirse, para no perder el corte de esa capa (research R10).
+- **Dibujar desde una esquina donde ya se unen dos muros**: el muro nuevo llega a tope, sin unirse, y la
+  esquina existente no cambia. Cada extremo de un muro admite una sola unión; las uniones en T y los
+  cruces llegan después (research R4).
 - **Muros de otros programas con capas de material en el IFC**: se ven con sus capas y se pueden
   seleccionar, cambiar y separar. Si su línea de referencia no es exterior, centro ni interior, el Info
   Box la muestra como "Otra" y solo se cambian su altura y, si es de una capa, su material.

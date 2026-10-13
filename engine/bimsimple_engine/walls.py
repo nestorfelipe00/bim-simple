@@ -2,11 +2,16 @@
 (data-model.md §3, §4 y §6; research R3, R5 y R10)."""
 
 import numpy as np
+import ifcopenshell.api.geometry
+import ifcopenshell.api.material
+import ifcopenshell.api.root
+import ifcopenshell.api.spatial
+import ifcopenshell.api.type
 import ifcopenshell.util.element
 import ifcopenshell.util.placement
 import ifcopenshell.util.representation
 
-from . import layers, materials
+from . import EngineError, layers, materials, storeys
 
 LOCKED_REASON = "Este muro viene de otro programa y BIM Simple no puede cambiar su forma; se puede borrar."
 REFERENCES = ("exterior", "center", "interior")
@@ -193,3 +198,132 @@ def index(project):
     if project.endpoint_index is None:
         project.endpoint_index = EndpointIndex(project)
     return project.endpoint_index
+
+
+# ---------- validaciones (contracts/core_api.md, "Errores esperables") ----------
+MIN_LENGTH = 0.01  # metros (spec, casos límite)
+
+
+def check_positive(value, message):
+    if not isinstance(value, (int, float)) or value <= 0:
+        raise EngineError(message)
+
+
+def check_reference(reference):
+    if reference not in REFERENCES:
+        raise EngineError("Línea de referencia no válida.")
+
+
+def _point(value):
+    if not isinstance(value, (list, tuple)) or len(value) != 2 or not all(isinstance(v, (int, float)) for v in value):
+        raise EngineError("Punto no válido.")
+    return (float(value[0]), float(value[1]))
+
+
+def _contexts(project):
+    f = project.file
+    body = ifcopenshell.util.representation.get_context(f, "Model", "Body", "MODEL_VIEW")
+    axis = ifcopenshell.util.representation.get_context(f, "Plan", "Axis", "GRAPH_VIEW")
+    return body, axis
+
+
+def regenerate(project, wall_list):
+    """regenerate_wall_representation (research R4) de cada muro, con su altura actual."""
+    for wall in wall_list:
+        ifcopenshell.api.geometry.regenerate_wall_representation(project.file, wall=wall, length=1.0,
+                                                                  height=height_of(project, wall))
+
+
+def connected_walls(wall):
+    return [other for other, _, _ in path_connections(wall)]
+
+
+def end_is_joined(project, wall, point):
+    """True si el extremo del muro que está en point ya tiene una unión ATSTART/ATEND."""
+    first, last = endpoints(project, wall)
+    end = "ATSTART" if np.hypot(first[0] - point[0], first[1] - point[1]) <= JOIN_TOLERANCE else "ATEND"
+    return any(connection == end for _, connection, _ in path_connections(wall))
+
+
+def basic_layer_set(project, mat, thickness):
+    """Conjunto propio de una capa de un muro Básico (LayerSetName "Básica"; research R2)."""
+    f = project.file
+    layer_set = ifcopenshell.api.material.add_material_set(f, name="Básica", set_type="IfcMaterialLayerSet")
+    layer = ifcopenshell.api.material.add_layer(f, layer_set=layer_set, material=mat)
+    ifcopenshell.api.material.edit_layer(f, layer=layer, attributes={"LayerThickness": thickness / project.unit_scale()})
+    return layer_set
+
+
+def set_usage(project, wall, reference):
+    """Sentido NEGATIVE y desplazamiento de la línea de referencia (research R3)."""
+    usage = layers.usage_of(wall)
+    total = sum(thicknesses(project, wall))
+    ifcopenshell.api.material.edit_layer_usage(project.file, usage=usage, attributes={
+        "DirectionSense": "NEGATIVE", "OffsetFromReferenceLine": offset_for(reference, total) / project.unit_scale()})
+
+
+# ---------- crear (FR-005, FR-011 a FR-014; research R4) ----------
+def create_wall(project, start, end, structure_id=None, material_id=None, thickness=None, height=None,
+                reference="exterior"):
+    project.require_project()
+    storey = project.entity(project.active_storey_id) if project.active_storey_id else None
+    if storey is None:
+        raise EngineError("No hay un piso activo donde dibujar.")
+    start, end = _point(start), _point(end)
+    length = float(np.hypot(end[0] - start[0], end[1] - start[1]))
+    if length < MIN_LENGTH:
+        raise EngineError("El muro es demasiado corto (mínimo 1 cm).")
+    check_positive(height, "La altura debe ser mayor que 0.")
+    check_reference(reference)
+    if structure_id is not None:
+        wall_type = materials.structure(project, structure_id)
+        mat = None
+    else:
+        wall_type = None
+        mat = materials.material(project, material_id)
+        check_positive(thickness, "El espesor debe ser mayor que 0.")
+
+    def apply():
+        f = project.file
+        body, axis = _contexts(project)
+        wall = ifcopenshell.api.root.create_entity(f, ifc_class="IfcWall", name="Muro")
+        ifcopenshell.api.spatial.assign_container(f, products=[wall], relating_structure=storey)
+        if wall_type is not None:
+            ifcopenshell.api.type.assign_type(f, related_objects=[wall], relating_type=wall_type)  # una por muro
+        else:
+            ifcopenshell.api.material.assign_material(f, products=[wall], type="IfcMaterialLayerSetUsage",
+                                                      material=basic_layer_set(project, mat, thickness))
+        set_usage(project, wall, reference)
+        total = sum(thicknesses(project, wall))
+        # La cota es absoluta: edit_object_placement la pasa a relativa al piso (research R4).
+        rep = ifcopenshell.api.geometry.create_2pt_wall(f, element=wall, context=body, p1=start, p2=end,
+                                                        elevation=storeys.elevation(project, storey), height=height,
+                                                        thickness=total)
+        ifcopenshell.api.geometry.assign_representation(f, product=wall, representation=rep)
+        scale = project.unit_scale()
+        rep = ifcopenshell.api.geometry.add_axis_representation(f, context=axis, axis=[(0.0, 0.0), (length / scale, 0.0)])
+        ifcopenshell.api.geometry.assign_representation(f, product=wall, representation=rep)
+        touched = {wall}
+        idx = index(project)
+        for point in (start, end):
+            for other_id in sorted(idx.near(storey.id(), point)):
+                other = project.entity(other_id)
+                if other is None or other == wall or kind_of(project, other) != "regenerable":
+                    continue  # no se une con capas de esquina cortada ni con muros bloqueados (research R10)
+                if end_is_joined(project, other, point):
+                    continue  # un extremo admite una sola unión (connect_path.py:36-70): la esquina existente no cambia
+                if ifcopenshell.api.geometry.connect_wall(f, wall, other) is not None:  # None: ejes paralelos
+                    touched.add(other)
+                    break
+        # El muro nuevo se regenera siempre: create_2pt_wall deja el cuerpo hacia +Y sin mirar la usage, y recién la
+        # regeneración lo pone del lado de su línea de referencia (research R3).
+        regenerate(project, [wall] + [w for w in touched if w != wall and kind_of(project, w) != "locked"])
+        return wall, touched
+
+    try:
+        wall, touched = project.transaction(apply)
+    except Exception:
+        project.discard_index()
+        raise
+    index(project).add(wall)
+    return {"state": project.state(), "wall_id": wall.id(), "changed_ids": sorted(w.id() for w in touched)}

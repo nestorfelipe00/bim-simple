@@ -54,6 +54,8 @@ Sigue igual todo lo que allí se dice:
 
 | Situación | `error` |
 |---|---|
+| Dibujar sin piso activo (IFC sin pisos) | "No hay un piso activo donde dibujar." |
+| `start` o `end` que no son dos números | "Punto no válido." |
 | Muro de menos de 1 cm | "El muro es demasiado corto (mínimo 1 cm)." |
 | Espesor ≤ 0 | "El espesor debe ser mayor que 0." |
 | Altura ≤ 0 | "La altura debe ser mayor que 0." |

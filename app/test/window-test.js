@@ -285,3 +285,119 @@ addSection(async function motorDetenido(t) {
   t.step(S, "Las órdenes siguientes funcionan: Nuevo proyecto", created && created.ok && JSON.stringify(t.tableRows()) === JSON.stringify([["● Planta Baja", "0,00", "3,00"]]), t.tableRows());
   await t.capture("motor");
 });
+
+// ---------- Función 002: muros con capas (specs/002-muros-capas) ----------
+const WALL_LIMIT_MS = 200; // SC-006
+
+// Evento del ratón en el punto (x, y) de la planta, como lo recibe app.js.
+function at(t, x, y, extra = {}) {
+  return { ...t.app.viewports.worldToClient(x, y), button: 0, shiftKey: false, ...extra };
+}
+
+async function click(t, x, y, extra = {}) {
+  t.app.planPointer("move", at(t, x, y, extra));
+  return t.app.planPointer("down", at(t, x, y, extra));
+}
+
+async function press(t, ...keys) {
+  for (const key of keys) await t.app.keyDown({ key, target: document.body, preventDefault() {} });
+}
+
+// Proyecto nuevo con pisos a 0,00, 3,00 y 6,00 y el Piso 1 activo.
+async function threeStoreys(t) {
+  await t.app.handleAction("new");
+  await t.app.handleAction("add-above");
+  await t.app.handleAction("add-above");
+  const piso1 = t.app.getState().storeys.find((s) => s.name === "Piso 1").id;
+  await t.app.handleAction("activate", piso1);
+  return piso1;
+}
+
+// Superficie en planta: área de los triángulos de arriba (normal +Z) de las mallas de muro del piso.
+function planArea(t, storeyId) {
+  let area = 0;
+  for (const mesh of t.app.meshes.byId.values()) {
+    if (!mesh.userData.wall || mesh.userData.storeyId !== storeyId) continue;
+    const p = mesh.geometry.attributes.position.array;
+    for (let i = 0; i < p.length; i += 9) {
+      const ux = p[i + 3] - p[i], uy = p[i + 4] - p[i + 1], uz = p[i + 5] - p[i + 2];
+      const vx = p[i + 6] - p[i], vy = p[i + 7] - p[i + 1], vz = p[i + 8] - p[i + 2];
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      const length = Math.hypot(nx, ny, nz);
+      if (length > 0 && nz / length > 0.99) area += length / 2;
+    }
+  }
+  return area;
+}
+
+const near = (a, b, tolerance = 0.001) => Math.abs(a - b) <= tolerance;
+const selectedText = (id) => {
+  const select = document.getElementById(id);
+  return select.options[select.selectedIndex] ? select.options[select.selectedIndex].textContent : "";
+};
+
+addSection(async function muros1(t) {
+  const S = "Muros 1 — dibujar";
+  const piso1 = await threeStoreys(t);
+  t.step(S, "Al crear un proyecto queda activa la Flecha (FR-001)", t.app.getTool() === "arrow" && document.querySelector('#toolbox button[data-tool="arrow"]').classList.contains("active"));
+  document.querySelector('#toolbox button[data-tool="wall"]').click(); // caja de herramientas > Muro
+  const reference = document.querySelector("#ib-reference button.on");
+  t.step(S, "Info Box del Muro: Básica, Hormigón, 0,20, altura del piso 3,00 y Exterior (FR-003)",
+    t.app.getTool() === "wall" && selectedText("ib-structure") === "Básica" && selectedText("ib-material") === "Hormigón" &&
+    document.getElementById("ib-thickness").value === "0,20" && document.getElementById("ib-height").value === "3,00" && reference && reference.dataset.reference === "exterior",
+    { structure: selectedText("ib-structure"), material: selectedText("ib-material"), thickness: document.getElementById("ib-thickness").value, height: document.getElementById("ib-height").value });
+
+  // Rectángulo de 6 × 4 m en sentido horario: 4 clics y un clic en el primer punto (FR-005, FR-010).
+  const times = [];
+  for (const [x, y] of [[0, 4], [6, 4], [6, 0], [0, 0], [0, 4]]) {
+    const response = await click(t, x, y);
+    if (response) times.push(response.total_ms);
+  }
+  const walls = t.app.meshes.walls(piso1);
+  t.step(S, "4 clics y clic en el primer punto: 4 muros en el Piso 1 y la cadena terminó (FR-005, FR-010, FR-013)",
+    walls.length === 4 && t.app.wallTool.chain === null && walls.every((w) => w.kind === "regenerable" && near(w.thickness, 0.2) && near(w.height, 3)), walls.length);
+  const area = planArea(t, piso1);
+  t.step(S, `Superficie en planta ${area.toFixed(4)} m² = 3,84 ± 0,1 %: esquinas sin huecos ni superposiciones (SC-002)`, Math.abs(area - 3.84) <= 3.84 * 0.001, area);
+  t.step(S, `Cada muro con su redibujo en < ${WALL_LIMIT_MS} ms (SC-006): ${times.join(", ")} ms`, times.length === 4 && times.every((ms) => ms < WALL_LIMIT_MS), times);
+
+  // Cambiar de piso termina la cadena (casos límite).
+  await click(t, 20, 0);
+  const pb = t.app.getState().storeys.find((s) => s.name === "Planta Baja").id;
+  await t.app.handleAction("activate", pb);
+  const ended = t.app.wallTool.chain === null;
+  await t.app.handleAction("activate", piso1);
+  t.step(S, "Cambiar de piso activo termina la cadena", ended);
+
+  // Shift (45°) y longitud escrita (FR-007, FR-008).
+  await click(t, 10, 0);
+  t.app.planPointer("move", at(t, 13, 2.9, { shiftKey: true }));
+  await press(t, "4", ",", "5", "Enter");
+  const diagonal = t.app.meshes.walls(piso1).find((w) => near(w.start[0], 10) && near(w.start[1], 0));
+  const expectedEnd = 10 + 4.5 * Math.SQRT1_2;
+  t.step(S, "Shift + «4,5» + Enter: muro de 4,50 m a 45° (FR-007, FR-008)",
+    diagonal && near(diagonal.end[0], expectedEnd) && near(diagonal.end[1], 4.5 * Math.SQRT1_2), diagonal);
+  await press(t, "Escape");
+  t.step(S, "Esc termina la cadena (FR-010)", t.app.wallTool.chain === null);
+
+  // Imán al extremo de un muro existente (FR-009): un clic a 5 px de la esquina (6, 0).
+  const corner = at(t, 6, 0);
+  const nearCorner = { ...corner, clientX: corner.clientX + 5 };
+  t.app.planPointer("move", nearCorner);
+  await t.app.planPointer("down", nearCorner);
+  const snapped = t.app.wallTool.chain && t.app.wallTool.chain.first;
+  await click(t, 6, -3);
+  await press(t, "Escape");
+  const fromCorner = t.app.meshes.walls(piso1).find((w) => near(w.end[1], -3));
+  t.step(S, "Imán: un clic a 5 px de un extremo empieza el muro exactamente en el extremo (FR-009)",
+    snapped && snapped.x === 6 && snapped.y === 0 && fromCorner && near(fromCorner.start[0], 6, 1e-6) && near(fromCorner.start[1], 0, 1e-6), { snapped, fromCorner });
+
+  // Un muro de menos de 1 cm no se crea (casos límite).
+  const count = t.app.meshes.walls(piso1).length;
+  await click(t, 30, 0);
+  await click(t, 30.004, 0);
+  await press(t, "Escape");
+  t.step(S, "Un muro de menos de 1 cm no se crea", t.app.meshes.walls(piso1).length === count);
+
+  t.app.viewports.fit({ animate: false });
+  await t.capture("m1");
+});

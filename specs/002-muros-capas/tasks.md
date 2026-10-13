@@ -255,7 +255,7 @@ guardar y volver a abrir: 4 muros en el Piso 1, con el espesor y la altura del I
 
 ### Pruebas de la Historia 1
 
-- [ ] T015 [US1] En `engine/tests/test_walls.py`, antes de implementar:
+- [X] T015 [US1] En `engine/tests/test_walls.py`, antes de implementar:
   - `test_recinto_basico_6x4` (SC-002):
     - 4 `create_wall` en sentido horario `(0,4)→(6,4)→(6,0)→(0,0)→(0,4)` en un proyecto nuevo con pisos 0/3/6 y el
       Piso 1 activo;
@@ -287,7 +287,7 @@ guardar y volver a abrir: 4 muros en el Piso 1, con el espesor y la altura del I
 
 ### Implementación de la Historia 1
 
-- [ ] T016 [US1] `create_wall` en `engine/bimsimple_engine/walls.py` y `commands.py`
+- [X] T016 [US1] `create_wall` en `engine/bimsimple_engine/walls.py` y `commands.py`
   ([core_api.md](contracts/core_api.md); research R4):
   1. **Validaciones antes de la transacción**:
      - longitud ≥ 0,01;
@@ -308,10 +308,10 @@ guardar y volver a abrir: 4 muros en el Piso 1, con el espesor y la altura del I
      - `regenerate_wall_representation(length=1.0, height=Depth)` del nuevo y los unidos.
   3. Actualiza el índice.
   4. Devuelve `{state, wall_id, changed_ids}`.
-- [ ] T017 [P] [US1] Crear `app/src/renderer/toolbox.js`:
+- [X] T017 [P] [US1] Crear `app/src/renderer/toolbox.js`:
   - clase `Toolbox({onChange})`: clic en un botón activa esa herramienta;
   - `set(tool)` marca la activa (FR-001) y `enable(bool)` (desactivada sin proyecto).
-- [ ] T018 [P] [US1] Crear `app/src/renderer/infobox.js`, modo herramienta ([ui.md](contracts/ui.md) "Info Box"):
+- [X] T018 [P] [US1] Crear `app/src/renderer/infobox.js`, modo herramienta ([ui.md](contracts/ui.md) "Info Box"):
   - Campos:
     - **Estructura** (lista: "Básica" y después el catálogo; botón "…" con `title` "Estructuras compuestas…");
     - **Material** (lista de `state.materials`);
@@ -326,7 +326,7 @@ guardar y volver a abrir: 4 muros en el Piso 1, con el espesor y la altura del I
     - mientras el usuario no la cambie, sigue la del piso activo (FR-004; `followStoreyHeight`);
     - los demás valores se recuerdan mientras el programa esté abierto.
   - **Valores por defecto**: Básica, "Hormigón", 0,20, Exterior.
-- [ ] T019 [US1] Crear `app/src/renderer/wall-tool.js` ([ui.md](contracts/ui.md) "Dibujo"; research R12):
+- [X] T019 [US1] Crear `app/src/renderer/wall-tool.js` ([ui.md](contracts/ui.md) "Dibujo"; research R12):
   - **Cadena**:
     - primer clic fija el inicio;
     - cada clic manda `onCreate(start, end)`;
@@ -348,7 +348,7 @@ guardar y volver a abrir: 4 muros en el Piso 1, con el espesor y la altura del I
     - una longitud inválida muestra "La longitud debe ser mayor que 0.".
   - Un muro < 1 cm no se manda.
   - `cancel()` termina la cadena.
-- [ ] T020 [US1] `app/src/renderer/app.js`:
+- [X] T020 [US1] `app/src/renderer/app.js`:
   - crea `Toolbox`, `InfoBox` y `WallTool`;
   - la herramienta activa es `arrow` al crear o abrir un proyecto (FR-001);
   - `keydown` de la página: Esc, Enter, dígitos y Retroceso van a la herramienta activa; Supr se usa en US4;
@@ -357,7 +357,7 @@ guardar y volver a abrir: 4 muros en el Piso 1, con el espesor y la altura del I
   - la cadena termina al cambiar de piso activo, de herramienta o de proyecto (`render`) y cuando el motor se
     reinicia;
   - en cada `render`, `meshes.setMaterials(state.materials)` y `infobox.render(state)`.
-- [ ] T021 [US1] Sección "Muros 1 — dibujar" en `app/test/window-test.js`. Simula el ratón con `PointerEvent` sobre
+- [X] T021 [US1] Sección "Muros 1 — dibujar" en `app/test/window-test.js`. Simula el ratón con `PointerEvent` sobre
   `#plan-view` en `viewports.worldToClient(x, y)`.
   - **Preparación**: proyecto nuevo con pisos 0/3/6, Piso 1 activo y herramienta Muro.
   - **Info Box**: muestra "Básica", "Hormigón", "0,20", "3,00" y Exterior.
@@ -372,7 +372,7 @@ guardar y volver a abrir: 4 muros en el Piso 1, con el espesor y la altura del I
   - **Rechazos**: Esc termina la cadena; un muro de 0,5 cm no se crea.
   - **Tiempo**: cada `create_wall` con su redibujo tarda < 200 ms (SC-006, con los muros de la prueba).
   - Captura `m1`.
-- [ ] T022 [US1] Correr las dos pruebas. Esperado: todo en verde, también la función 001. Commit "feat: Historia 1 de
+- [X] T022 [US1] Correr las dos pruebas. Esperado: todo en verde, también la función 001. Commit "feat: Historia 1 de
   la función 002, dibujar muros".
 
 **Punto de control**: el MVP de la función 002, con muros Básicos dibujados y unidos. Si el usuario quiere verlo,

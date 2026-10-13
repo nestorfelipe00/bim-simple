@@ -111,6 +111,11 @@ separar y cambiar su altura, pero no su estructura: no se sabe qué línea mante
 7. Por cada muro del mismo piso con un extremo a menos de 1 mm de `p1` o `p2`: `geometry.connect_wall(file, nuevo,
    otro)` (`connect_wall.py:30-35`). Crea un `IfcRelConnectsPathElements` ATSTART/ATEND. Cada extremo admite una
    sola unión; `connect_path` borra la anterior incompatible (`connect_path.py:36-70`).
+   - Por eso, si el extremo del otro muro **ya está unido**, no se une el muro nuevo: llega a tope y la esquina
+     existente no cambia. Si no, la unión nueva reemplazaría a la vieja y rompería esa esquina (encontrado en la
+     implementación, T016; caso límite de la especificación).
+   - **El muro nuevo se regenera siempre**: `create_2pt_wall` deja el cuerpo hacia +Y sin mirar la usage, y recién
+     la regeneración lo pone del lado de su línea de referencia.
 8. `geometry.regenerate_wall_representation(file, wall, length, height)` (`regenerate_wall_representation.py:41-47`)
    sobre el muro nuevo y los unidos:
    - hace el inglete por capas en las esquinas (`146-162`, `528`);

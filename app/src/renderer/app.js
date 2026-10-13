@@ -1,8 +1,12 @@
 // Controlador de la página: un solo punto que manda las órdenes al motor, reemplaza el estado con cada
 // respuesta y actualiza el panel y las vistas (plan.md, "Interfaz").
+// Función 002: caja de herramientas, Info Box y herramienta Muro (specs/002-muros-capas/contracts/ui.md).
 import { Viewports } from "./viewports.js";
 import { MeshStore } from "./meshes.js";
 import { StoreyPanel } from "./storey-panel.js";
+import { Toolbox } from "./toolbox.js";
+import { InfoBox } from "./infobox.js";
+import { WallTool } from "./wall-tool.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_ALL = new Set(["new_project", "open_project", "undo", "redo"]);
@@ -14,8 +18,26 @@ const viewports = new Viewports({
   planLabel: $("plan-label"),
 });
 const meshes = new MeshStore(viewports);
-let state = { has_project: false, has_building: false, storeys: [], active_storey_id: null };
+let state = { has_project: false, has_building: false, storeys: [], active_storey_id: null, materials: [], structures: [] };
+let tool = "arrow";
+let lastContext = ""; // proyecto y piso activo: si cambian, la cadena de muros termina
 const panel = new StoreyPanel({ onAction: (action, arg) => handleAction(action, arg) });
+const toolbox = new Toolbox({ onChange: (name) => setTool(name) });
+const infobox = new InfoBox({
+  onEdit: () => null, // cambios de la selección: Historia 4
+  onSplit: () => null, // separar en capas: Historia 3
+  onDelete: () => null, // borrar: Historia 4
+  onOpenStructures: () => handleAction("structures"),
+  showMessage,
+});
+const wallTool = new WallTool({
+  viewports,
+  meshes,
+  infobox,
+  getState: () => state,
+  onCreate: (start, end) => dispatch("create_wall", { start, end, ...infobox.toolValues() }),
+  showMessage,
+});
 
 function showMessage(text, isError = false) {
   const box = $("messages");
@@ -23,11 +45,24 @@ function showMessage(text, isError = false) {
   box.classList.toggle("error", !!isError);
 }
 
+function setTool(name) {
+  if (name === tool) return;
+  wallTool.cancel();
+  tool = name;
+  toolbox.set(name);
+  infobox.render(state, { tool, selection: [] });
+}
+
 function render() {
   meshes.setMaterials(state.materials);
   panel.render(state);
   const active = state.storeys.find((s) => s.id === state.active_storey_id);
   viewports.setActiveStorey(state.active_storey_id, active ? active.name : "", active ? active.elevation : 0);
+  const context = `${state.has_project}|${state.path}|${state.active_storey_id}`;
+  if (context !== lastContext) wallTool.cancel(); // FR-010 y casos límite: cambiar de piso o de proyecto
+  lastContext = context;
+  toolbox.enable(state.has_project);
+  infobox.render(state, { tool, selection: [] });
 }
 
 async function dispatch(cmd, args = {}) {
@@ -42,6 +77,7 @@ async function dispatch(cmd, args = {}) {
   if (result.state) state = result.state;
   else if (cmd === "state") state = result;
   const hadMeshes = meshes.size > 0;
+  if (cmd === "new_project" || cmd === "open_project") setTool("arrow"); // FR-001
   if (REFRESH_ALL.has(cmd)) {
     meshes.clear();
     if (state.has_project) {
@@ -56,7 +92,7 @@ async function dispatch(cmd, args = {}) {
     }
   }
   render();
-  if (meshes.size > 0 && (!hadMeshes || cmd === "open_project")) viewports.fit({ animate: false });
+  if (meshes.size > 0 && (!hadMeshes || cmd === "open_project") && cmd !== "create_wall") viewports.fit({ animate: false });
   showMessage("");
   response.total_ms = Math.round(performance.now() - started);
   return response;
@@ -113,11 +149,47 @@ async function handleAction(action, arg) {
   }
 }
 
+// ---------- ratón y teclado en la planta (función 002) ----------
+// La prueba del programa llama a estas mismas funciones con eventos armados (app/test/window-test.js).
+function planPointer(type, event) {
+  if (!state.has_project) return null;
+  if (type === "contextmenu") {
+    if (tool === "wall") wallTool.cancel();
+    return null;
+  }
+  if (tool === "wall") return type === "move" ? wallTool.pointerMove(event) : wallTool.pointerDown(event);
+  return null;
+}
+
+async function keyDown(event) {
+  const target = event.target || {};
+  if (["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName) || document.querySelector("dialog[open]")) return false;
+  if (!state.has_project) return false;
+  if (tool === "wall") {
+    const handled = await wallTool.key(event);
+    if (handled && event.preventDefault) event.preventDefault();
+    return handled;
+  }
+  return false;
+}
+
+const planDiv = $("plan-view");
+planDiv.addEventListener("pointermove", (event) => planPointer("move", event));
+planDiv.addEventListener("pointerdown", (event) => {
+  if (event.button === 0 || event.button === 2) planPointer("down", event);
+});
+planDiv.addEventListener("contextmenu", (event) => {
+  event.preventDefault();
+  planPointer("contextmenu", event);
+});
+window.addEventListener("keydown", (event) => keyDown(event));
+
 bim.onMenu((action) => handleAction(action));
 bim.onNotice((text) => showMessage(text, text.startsWith("El motor")));
 bim.onEngineRestarted(() => {
-  state = { has_project: false, has_building: false, storeys: [], active_storey_id: null };
+  state = { has_project: false, has_building: false, storeys: [], active_storey_id: null, materials: [], structures: [] };
   meshes.clear();
+  wallTool.cancel();
   render();
 });
 
@@ -128,5 +200,8 @@ showMessage("Listo.");
 // Para la prueba del programa (ventana oculta, ?test=1).
 if (new URLSearchParams(location.search).get("test") === "1") {
   const { run } = await import("../../test/window-test.js");
-  run({ ready, getState: () => state, dispatch, handleAction, panel, viewports, meshes, showMessage });
+  run({
+    ready, getState: () => state, dispatch, handleAction, panel, viewports, meshes, showMessage,
+    toolbox, infobox, wallTool, setTool, getTool: () => tool, planPointer, keyDown,
+  });
 }
