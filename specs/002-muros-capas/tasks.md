@@ -553,7 +553,7 @@ reabrir: igual.
 
 ### Pruebas de la Historia 4
 
-- [ ] T035 [US4] En `engine/tests/test_walls.py`:
+- [X] T035 [US4] En `engine/tests/test_walls.py`:
   - `test_cambiar_altura`: una capa separada a 3,60 → volumen × 1,2 y misma esquina; los demás no cambian.
   - `test_cambiar_estructura`:
     - Básica → "Tabique 15" con línea Exterior → la cara exterior sigue en la línea, el espesor es 0,15 y los unidos
@@ -587,7 +587,7 @@ reabrir: igual.
 
 ### Implementación de la Historia 4
 
-- [ ] T036 [US4] `edit_walls` y `delete_walls` en `engine/bimsimple_engine/walls.py` y `commands.py` (research R9;
+- [X] T036 [US4] `edit_walls` y `delete_walls` en `engine/bimsimple_engine/walls.py` y `commands.py` (research R9;
   data-model §3, "Reglas de cambio"):
   - **Validar primero** (`locked`, `other`, valores > 0 y existencia), y aplicar todo en una transacción.
   - **Altura**: `edit_attributes(Depth)` del sólido.
@@ -606,14 +606,14 @@ reabrir: igual.
     - `remove_material_set` del conjunto propio si no lo usa otro;
     - regenerar los vecinos que estaban unidos;
     - actualizar el índice.
-- [ ] T037 [US4] En `app/src/renderer/infobox.js` y `app.js`:
+- [X] T037 [US4] En `app/src/renderer/infobox.js` y `app.js`:
   - en modo selección se habilitan Estructura, Material, Espesor y Altura con las reglas de [ui.md](contracts/ui.md):
     - Material y Espesor solo si todos los seleccionados son Básicos;
     - campos desactivados y aviso `locked_reason` si hay `locked`;
   - cada cambio manda **un** `edit_walls` con todos los ids;
   - el botón **Borrar** y la tecla Supr mandan `delete_walls`;
   - la Línea de referencia solo se muestra ("Otra" si es `other`).
-- [ ] T038 [US4] Sección "Muros 4 — cambiar y borrar" en `app/test/window-test.js`:
+- [X] T038 [US4] Sección "Muros 4 — cambiar y borrar" en `app/test/window-test.js`:
   - separar un muro, elegir solo la capa exterior, Altura 3,60 → solo esa malla sube (su caja llega a 3,60 y las
     demás quedan en 3,00);
   - Shift + clic en otra capa → Altura "varios";
@@ -621,7 +621,7 @@ reabrir: igual.
   - Ctrl+Z las devuelve;
   - cambiar un muro a "Tabique 15" → espesor 0,15;
   - captura `m4`.
-- [ ] T039 [US4] Correr las dos pruebas y hacer el commit "feat: Historia 4 de la función 002, cambiar y borrar
+- [X] T039 [US4] Correr las dos pruebas y hacer el commit "feat: Historia 4 de la función 002, cambiar y borrar
   muros".
 
 ---

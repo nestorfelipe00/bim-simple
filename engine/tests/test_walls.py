@@ -458,6 +458,142 @@ def test_separar_muro_de_otro_programa(project, fixtures):
     assert sum(occ_volume(p) for p in parts) == pytest.approx(volume, rel=0.001)
 
 
+# ---------- Historia 4: cambiar y borrar ----------
+def test_cambiar_altura(project):
+    _, ring = composite_ring(project)
+    parts = [project.entity(i) for i in execute(project, "split_walls", {"ids": [ring[0].id()]})["new_ids"]]
+    outer, others = parts[0], parts[1:] + ring[1:]
+    before = {w.id(): occ_volume(w) for w in [outer] + others}
+    polygon = layers.layer_polygons(outer, 1.0)[0][1].copy()
+    execute(project, "edit_walls", {"ids": [outer.id()], "height": 3.6})
+    assert occ_volume(outer) == pytest.approx(before[outer.id()] * 1.2)
+    assert layers.layer_polygons(outer, 1.0)[0][1] == pytest.approx(polygon)  # misma esquina
+    assert all(occ_volume(w) == pytest.approx(before[w.id()]) for w in others)
+    assert walls.wall_info(project, outer)["height"] == pytest.approx(3.6)
+
+
+def test_cambiar_estructura(project):
+    state = three_storeys(project)
+    ids = draw(project, [(0.0, 0.0), (5.0, 0.0), (5.0, 4.0)], closed=False)
+    first, second = project.entity(ids[0]), project.entity(ids[1])
+    face = walls.endpoints(project, first)
+    tab15 = structure_id(state, "Tabique 15")
+    result = execute(project, "edit_walls", {"ids": [first.id()], "structure_id": tab15})
+    assert second.id() in result["changed_ids"]  # el unido se regenera
+    info = walls.wall_info(project, first)
+    assert info["structure_id"] == tab15 and info["thickness"] == pytest.approx(0.15) and info["reference"] == "exterior"
+    assert walls.endpoints(project, first) == pytest.approx(face)  # la línea de referencia queda en su lugar
+    ys = np.concatenate([p[:, 1] for _, p, _, _ in layers.layer_polygons(first, 1.0)])
+    assert (ys.min(), ys.max()) == pytest.approx((-0.15, 0.0))
+    assert len(walls.path_connections(first)) == 1
+    execute(project, "edit_walls", {"ids": [first.id()], "structure_id": None})
+    info = walls.wall_info(project, first)
+    names = {m["id"]: m["name"] for m in project.state()["materials"]}
+    assert info["structure_id"] is None and [(names[l["material_id"]], l["thickness"]) for l in info["layers"]] == [("Hormigón", pytest.approx(0.20))]
+    assert walls.reference_of(project, first) == "exterior"
+
+
+def test_cambiar_material_y_espesor_de_un_basico(project):
+    state = three_storeys(project)
+    a = project.entity(draw(project, [(0.0, 0.0), (5.0, 0.0)], closed=False, reference="center")[0])
+    volume = occ_volume(a)
+    execute(project, "edit_walls", {"ids": [a.id()], "material_id": material_id(state, "Ladrillo")})
+    assert walls.wall_info(project, a)["layers"][0]["material_id"] == material_id(state, "Ladrillo")
+    assert occ_volume(a) == pytest.approx(volume)  # el material no cambia la forma
+    execute(project, "edit_walls", {"ids": [a.id()], "thickness": 0.25})
+    polygon = layers.layer_polygons(a, 1.0)[0][1]
+    assert (polygon[:, 1].min(), polygon[:, 1].max()) == pytest.approx((-0.125, 0.125))  # Centro: sigue centrado
+    # Capa con esquinas cortadas: el espesor prolonga los cortes (research R10).
+    _, ring = composite_ring(project)
+    parts = [project.entity(i) for i in execute(project, "split_walls", {"ids": [ring[0].id()]})["new_ids"]]
+    insulation = parts[2]  # Aislación 0,05
+    before = layers.layer_polygons(insulation, 1.0)[0][1]
+    execute(project, "edit_walls", {"ids": [insulation.id()], "thickness": 0.08})
+    after = layers.layer_polygons(insulation, 1.0)[0][1]
+    assert walls.wall_info(project, insulation)["thickness"] == pytest.approx(0.08)
+    assert (after[:, 1].min(), after[:, 1].max()) == pytest.approx((-0.08, 0.0))  # la cara exterior no se mueve
+    for old in before:  # las aristas de los extremos siguen sobre sus rectas: cada punto nuevo sobre la recta vieja
+        if abs(old[1]) < 1e-6:
+            assert any(np.allclose(old, new) for new in after)
+    assert walls.kind_of(project, insulation) == "custom_ends"
+
+
+@pytest.mark.parametrize("caso, error", [
+    ("bloqueado", "BIM Simple no puede cambiar la forma de este muro (viene de otro programa)."),
+    ("otra", "Este muro tiene una línea de referencia que BIM Simple no maneja; solo se puede cambiar su altura y su material."),
+    ("altura", "La altura debe ser mayor que 0."),
+    ("inexistente", "Uno de los muros elegidos ya no existe."),
+])
+def test_rechazos_al_cambiar(project, fixtures, caso, error):
+    execute(project, "open_project", {"path": fixtures["muros_otro_programa"]})
+    by_name = {w.Name: w for w in project.file.by_type("IfcWall")}
+    state = project.state()
+    args = {
+        "bloqueado": {"ids": [by_name["Muro sin capas"].id()], "height": 2.5},
+        "otra": {"ids": [by_name["Muro con capas"].id()], "structure_id": None},
+        "altura": {"ids": [by_name["Muro con capas"].id()], "height": 0},
+        "inexistente": {"ids": [999999], "height": 2.5},
+    }[caso]
+    before = len(list(project.file))
+    with pytest.raises(EngineError) as raised:
+        execute(project, "edit_walls", args)
+    assert str(raised.value) == error
+    assert len(list(project.file)) == before
+
+
+def test_borrar_muros(project, tmp_path):
+    three_storeys(project)
+    ring = [project.entity(i) for i in draw(project, RING)]
+    victim = ring[0]
+    own = ifcopenshell.util.element.get_material(victim).ForLayerSet
+    result = execute(project, "delete_walls", {"ids": [victim.id()]})
+    assert result["deleted_ids"] == [victim.id()] and sorted(result["changed_ids"]) == sorted([ring[1].id(), ring[3].id()])
+    assert len(project.file.by_type("IfcWall")) == 3 and len(project.file.by_type("IfcRelConnectsPathElements")) == 2
+    assert own.id() not in {e.id() for e in project.file.by_type("IfcMaterialLayerSet")}
+    for neighbor in (ring[1], ring[3]):  # el extremo hacia el muro borrado queda recto
+        assert walls.kind_of(project, neighbor) == "regenerable" and len(walls.path_connections(neighbor)) == 1
+    path = str(tmp_path / "borrado.ifc")
+    execute(project, "save_project", {"path": path})
+    assert execute(project, "validate_file", {"path": path})["errors"] == 0
+    execute(project, "undo", {})
+    assert len(project.file.by_type("IfcWall")) == 4 and len(project.file.by_type("IfcRelConnectsPathElements")) == 4
+
+
+def test_cambios_guardados_y_reabiertos(project, tmp_path):
+    state, ring = composite_ring(project)
+    parts = execute(project, "split_walls", {"ids": [ring[0].id()]})["new_ids"]
+    execute(project, "edit_walls", {"ids": [parts[0]], "height": 3.6})
+    execute(project, "edit_walls", {"ids": [ring[2].id()], "structure_id": structure_id(state, "Tabique 15")})
+    execute(project, "delete_walls", {"ids": [parts[3]]})
+    before_infos, before_joins = infos(project), joins(project)
+    path = str(tmp_path / "cambios.ifc")
+    execute(project, "save_project", {"path": path})
+    execute(project, "open_project", {"path": path})
+    after = infos(project)
+    assert set(after) == set(before_infos)
+    assert all(same_info(info, after[key]) for key, info in before_infos.items())
+    assert joins(project) == before_joins
+
+
+def test_muros_de_otro_programa_se_conservan(project, fixtures, tmp_path):
+    execute(project, "open_project", {"path": fixtures["muros_otro_programa"]})
+    locked = {w.GlobalId: occ_volume(w) for w in project.file.by_type("IfcWall") if walls.kind_of(project, w) == "locked"}
+    bodies = {w.GlobalId: [e.is_a() for e in project.file.traverse(w.Representation)] for w in project.file.by_type("IfcWall")
+              if w.GlobalId in locked}
+    hormigon = next(m for m in project.state()["materials"] if m["name"] == "Hormigón")["id"]
+    wall_id = execute(project, "create_wall", {"start": [10.0, 0.0], "end": [14.0, 0.0], "structure_id": None,
+                                               "material_id": hormigon, "thickness": 0.2, "height": 3.0,
+                                               "reference": "exterior"})["wall_id"]
+    execute(project, "delete_walls", {"ids": [wall_id]})
+    path = str(tmp_path / "ajeno.ifc")
+    execute(project, "save_project", {"path": path})
+    execute(project, "open_project", {"path": path})
+    for wall in project.file.by_type("IfcWall"):
+        if wall.GlobalId in locked:
+            assert occ_volume(wall) == pytest.approx(locked[wall.GlobalId])
+            assert [e.is_a() for e in project.file.traverse(wall.Representation)] == bodies[wall.GlobalId]
+
+
 # ---------- Base (fase 2) ----------
 def test_proyecto_nuevo_trae_el_catalogo(project):
     state = execute(project, "new_project", {})["state"]

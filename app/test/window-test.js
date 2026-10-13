@@ -531,3 +531,51 @@ addSection(async function muros3(t) {
   t.app.viewports.fit({ animate: false });
   await t.capture("m3");
 });
+
+// Altura máxima (Z) de la malla de un muro.
+function topZ(t, id) {
+  const mesh = t.app.meshes.byId.get(id);
+  mesh.geometry.computeBoundingBox();
+  return mesh.geometry.boundingBox.max.z;
+}
+
+addSection(async function muros4(t) {
+  const S = "Muros 4 — cambiar y borrar";
+  const piso1 = await compositeRing(t);
+  await click(t, 3, 3.85);
+  document.getElementById("ib-split").click();
+  await waitFor(() => t.app.selection.ids.length === 4, 5000, 20);
+  const layersIds = [...t.app.selection.ids];
+
+  // Solo la capa exterior (Revoque 0,02, entre y 3,98 y 4,00) a 3,60 de altura.
+  await click(t, 3, 3.99);
+  const outer = t.app.selection.ids[0];
+  t.step(S, "Clic en la capa exterior: solo ella queda seleccionada", t.app.selection.ids.length === 1 && outer === layersIds[0], t.app.selection.ids);
+  setInput(document.getElementById("ib-height"), "3,60");
+  await waitFor(() => t.app.meshes.wall(outer) && near(t.app.meshes.wall(outer).height, 3.6), 5000, 20);
+  const others = layersIds.slice(1).map((id) => topZ(t, id));
+  t.step(S, "Altura 3,60 en la capa exterior: solo esa capa sube (FR-025)",
+    near(topZ(t, outer), 6.6, 1e-4) && others.every((z) => near(z, 6.0, 1e-4)), { outer: topZ(t, outer), others });
+
+  // Shift + clic en el ladrillo: dos alturas distintas → "varios".
+  await click(t, 3, 3.88, { shiftKey: true });
+  const height = document.getElementById("ib-height");
+  t.step(S, "Shift + clic agrega la capa de ladrillo; la altura dice «varios» (FR-023, FR-024)",
+    t.app.selection.ids.length === 2 && height.value === "" && height.placeholder === "varios", { ids: t.app.selection.ids, placeholder: height.placeholder });
+
+  await press(t, "Delete");
+  t.step(S, "Supr borra las 2 capas elegidas (FR-026)", t.app.meshes.walls(piso1).length === 5 && t.app.selection.ids.length === 0, t.app.meshes.walls(piso1).length);
+  await t.app.handleAction("undo");
+  t.step(S, "Ctrl+Z las devuelve (FR-027)", t.app.meshes.walls(piso1).length === 7);
+
+  // Cambiar la estructura del muro de la derecha (entre x 5,70 y 6,00) a "Tabique 15".
+  await click(t, 5.85, 2);
+  const right = t.app.selection.ids[0];
+  choose("ib-structure", "Tabique 15");
+  await waitFor(() => t.app.meshes.wall(right) && near(t.app.meshes.wall(right).thickness, 0.15), 5000, 20);
+  t.step(S, "Estructura «Tabique 15» en un muro elegido: espesor 0,15 (FR-025)",
+    t.app.selection.ids[0] === right && near(t.app.meshes.wall(right).thickness, 0.15) && document.getElementById("ib-thickness").value === "0,15",
+    t.app.meshes.wall(right));
+  t.app.viewports.fit({ animate: false });
+  await t.capture("m4");
+});

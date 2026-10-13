@@ -2,6 +2,7 @@
 (data-model.md §3, §4 y §6; research R3, R5 y R10)."""
 
 import numpy as np
+import ifcopenshell.api.attribute
 import ifcopenshell.api.geometry
 import ifcopenshell.api.material
 import ifcopenshell.api.root
@@ -403,3 +404,172 @@ def split_walls(project, ids):
     new_ids, deleted = project.transaction(apply)
     project.discard_index()
     return {"state": project.state(), "deleted_ids": deleted, "new_ids": new_ids, "changed_ids": list(new_ids)}
+
+
+# ---------- cambiar y borrar (FR-024 a FR-027; research R9) ----------
+LOCKED_ERROR = "BIM Simple no puede cambiar la forma de este muro (viene de otro programa)."
+OTHER_ERROR = "Este muro tiene una línea de referencia que BIM Simple no maneja; solo se puede cambiar su altura y su material."
+SHAPE_ERROR = "El espesor de esta capa no se puede cambiar porque su forma no es un tramo recto."
+
+
+def is_basic(wall):
+    return structure_of(wall) is None
+
+
+def _extended_polygon(project, wall, thickness):
+    """Polígono de una capa con extremos propios con el espesor nuevo (research R10), o None."""
+    usage = layers.usage_of(wall)
+    scale = project.unit_scale()
+    (_, polygon, _, _), = layers.layer_polygons(wall, scale)
+    old = thicknesses(project, wall)[0]
+    face = float(usage.OffsetFromReferenceLine) * scale
+    sense = 1.0 if usage.DirectionSense == "POSITIVE" else -1.0
+    return layers.extend_ends(polygon, face, face + sense * old, face + sense * thickness)
+
+
+def _replace_profile(project, wall, polygon):
+    """Cambia el cuerpo de una capa con extremos propios por la extrusión del polígono nuevo."""
+    import ifcopenshell.util.shape_builder
+
+    f = project.file
+    scale = project.unit_scale()
+    body, _ = _contexts(project)
+    old_rep = ifcopenshell.util.representation.get_representation(wall, "Model", "Body", "MODEL_VIEW")
+    solid = layers.body_solid(wall)
+    _, z0, depth = layers.profile_polygon(solid, scale)
+    builder = ifcopenshell.util.shape_builder.ShapeBuilder(f)
+    local = [(float(x) / scale, float(y) / scale) for x, y in polygon]
+    new_solid = builder.extrude(builder.profile(builder.polyline(local, closed=True)), magnitude=depth / scale,
+                                position=(0.0, 0.0, z0 / scale))
+    ifcopenshell.api.geometry.unassign_representation(f, product=wall, representation=old_rep)
+    ifcopenshell.api.geometry.remove_representation(f, representation=old_rep)
+    ifcopenshell.api.geometry.assign_representation(f, product=wall, representation=builder.get_representation(body, [new_solid]))
+
+
+def _default_basic_material(project, wall):
+    found = next((m for m in materials.materials(project) if m.Name == "Hormigón"), None)
+    if found is None:
+        usage = layers.usage_of(wall)
+        found = usage.ForLayerSet.MaterialLayers[0].Material if usage is not None else None
+    if found is None:
+        raise EngineError("El material elegido ya no existe.")
+    return found
+
+
+def edit_walls(project, ids, **changes):
+    """Aplica a todos los muros lo que viene: height, structure_id (None = Básica), material_id, thickness."""
+    found = require_walls(project, ids)
+    kinds = {w.id(): kind_of(project, w) for w in found}
+    references = {w.id(): reference_of(project, w) for w in found}
+    if any(kind == "locked" for kind in kinds.values()):
+        raise EngineError(LOCKED_ERROR)
+    if "height" in changes:
+        check_positive(changes["height"], "La altura debe ser mayor que 0.")
+    new_type = None
+    if "structure_id" in changes:
+        if changes["structure_id"] is not None:
+            new_type = materials.structure(project, changes["structure_id"])
+        if any(references[w.id()] == "other" for w in found):
+            raise EngineError(OTHER_ERROR)
+    new_material = materials.material(project, changes["material_id"]) if "material_id" in changes else None
+    if "thickness" in changes:
+        check_positive(changes["thickness"], "El espesor debe ser mayor que 0.")
+        for wall in found:
+            if is_basic(wall) and references[wall.id()] == "other":
+                raise EngineError(OTHER_ERROR)
+            if is_basic(wall) and kinds[wall.id()] == "custom_ends" and changes.get("structure_id", None) is None \
+                    and _extended_polygon(project, wall, changes["thickness"]) is None:
+                raise EngineError(SHAPE_ERROR)
+
+    def apply():
+        f = project.file
+        scale = project.unit_scale()
+        changed, regen = set(), {}
+
+        def regenerate_with_neighbors(wall):
+            regen[wall.id()] = wall
+            for other in connected_walls(wall):
+                if kind_of(project, other) != "locked":
+                    regen[other.id()] = other
+
+        for wall in found:
+            changed.add(wall.id())
+            reference = references[wall.id()]
+            if "height" in changes:  # FR-025: solo la extrusión; conserva ingletes y cortes (research R9)
+                ifcopenshell.api.attribute.edit_attributes(f, product=layers.body_solid(wall),
+                                                           attributes={"Depth": changes["height"] / scale})
+            if "structure_id" in changes:
+                current = structure_of(wall)
+                if new_type is not None and current != new_type:
+                    own = own_layer_set(project, wall)
+                    ifcopenshell.api.type.assign_type(f, related_objects=[wall], relating_type=new_type)
+                    if own is not None:
+                        ifcopenshell.api.material.remove_material_set(f, material=own)
+                    set_usage(project, wall, reference)
+                    regenerate_with_neighbors(wall)
+                elif new_type is None and current is not None:
+                    mat = new_material or _default_basic_material(project, wall)
+                    ifcopenshell.api.type.unassign_type(f, related_objects=[wall])
+                    ifcopenshell.api.material.assign_material(f, products=[wall], type="IfcMaterialLayerSetUsage",
+                                                              material=basic_layer_set(project, mat, changes.get("thickness", 0.2)))
+                    set_usage(project, wall, reference)  # assign_material deja POSITIVE y 0 (research R9)
+                    regenerate_with_neighbors(wall)
+                    continue
+            if not is_basic(wall):
+                continue
+            if new_material is not None:
+                own = own_layer_set(project, wall)
+                if own is not None:
+                    ifcopenshell.api.material.edit_layer(f, layer=own.MaterialLayers[0], material=new_material)
+            if "thickness" in changes and abs(thicknesses(project, wall)[0] - changes["thickness"]) > 1e-9:
+                thickness = changes["thickness"]
+                custom = kinds[wall.id()] == "custom_ends"
+                usage = layers.usage_of(wall)
+                sense = usage.DirectionSense
+                polygon = _extended_polygon(project, wall, thickness) if custom else None  # antes de cambiar la capa
+                own = own_layer_set(project, wall)
+                if own is not None:
+                    ifcopenshell.api.material.edit_layer(f, layer=own.MaterialLayers[0],
+                                                         attributes={"LayerThickness": thickness / scale})
+                else:  # conjunto compartido (otro programa): el muro pasa a tener uno propio
+                    mat = usage.ForLayerSet.MaterialLayers[0].Material
+                    ifcopenshell.api.material.assign_material(f, products=[wall], type="IfcMaterialLayerSetUsage",
+                                                              material=basic_layer_set(project, mat, thickness))
+                    if custom:
+                        ifcopenshell.api.material.edit_layer_usage(f, usage=layers.usage_of(wall), attributes={
+                            "DirectionSense": sense, "OffsetFromReferenceLine": 0.0})
+                if custom:  # la cara exterior queda y los cortes se prolongan (research R10)
+                    _replace_profile(project, wall, polygon)
+                else:
+                    set_usage(project, wall, reference)
+                    regenerate_with_neighbors(wall)
+        regenerate(project, list(regen.values()))
+        return sorted(changed | set(regen))
+
+    changed = project.transaction(apply)
+    project.discard_index()
+    return {"state": project.state(), "changed_ids": changed}
+
+
+def delete_walls(project, ids):
+    """Borra los muros y regenera los que estaban unidos a ellos: su extremo queda recto (FR-026; research R9)."""
+    found = require_walls(project, ids)
+
+    def apply():
+        deleted = {w.id() for w in found}
+        neighbors = {}
+        for wall in found:
+            for other in connected_walls(wall):
+                if other.id() not in deleted:
+                    neighbors[other.id()] = other
+        for wall in found:
+            own = own_layer_set(project, wall)
+            ifcopenshell.api.root.remove_product(project.file, product=wall)  # también sus uniones
+            if own is not None:
+                ifcopenshell.api.material.remove_material_set(project.file, material=own)
+        regenerate(project, [w for w in neighbors.values() if kind_of(project, w) != "locked"])
+        return sorted(deleted), sorted(neighbors)
+
+    deleted, changed = project.transaction(apply)
+    project.discard_index()
+    return {"state": project.state(), "deleted_ids": deleted, "changed_ids": changed}

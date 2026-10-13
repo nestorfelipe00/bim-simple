@@ -263,9 +263,9 @@ de OpenCASCADE, como en la función 001, con el color de su primera capa si la t
 |---|---|---|
 | Altura | Se edita `Depth` del `IfcExtrudedAreaSolid` del cuerpo con `attribute.edit_attributes`. Conserva los ingletes y los cortes. | Capa separada a 3,60: volumen × 1,2 exacto; Ctrl+Z ✅ |
 | Estructura compuesta | `type.assign_type` (una llamada) → `edit_layer_usage` (NEGATIVE + desplazamiento de R3 con el espesor nuevo) → regenerar el muro y los unidos. Si era Básico, se borra su conjunto propio. | "Tabique 15" en lugar de "Muro exterior 30": la cara exterior queda en la línea ✅ |
-| Pasar a Básica | `type.unassign_type` (`api/type/unassign_type.py:24`) + conjunto propio de una capa + usage + regenerar. | Se prueba en la implementación (misma receta que crear) |
+| Pasar a Básica | `type.unassign_type` (`api/type/unassign_type.py:24`) + conjunto propio de una capa + usage + regenerar. | ✅ `plan002/v5_unassign.py`: quita el tipo, pero la usage sigue apuntando al conjunto del tipo; `assign_material(Usage)` la reemplaza por una nueva con POSITIVE y 0, así que después va `edit_layer_usage` (R3) |
 | Material de un Básico | `edit_layer(material=…)`. La forma no cambia. | — |
-| Espesor de un Básico | `edit_layer(LayerThickness)` + desplazamiento según la línea de referencia + regenerar si es regenerable (R10). Si tiene extremos propios, se recalcula su polígono prolongando los cortes (R10). | Se prueba en la implementación |
+| Espesor de un Básico | `edit_layer(LayerThickness)` + desplazamiento según la línea de referencia + regenerar si es regenerable (R10). Si tiene extremos propios, se recalcula su polígono prolongando los cortes (R10) y el cuerpo se reemplaza con `geometry.unassign_representation(file, product, representation)` + `remove_representation(file, representation)` (`unassign_representation.py:25`, `remove_representation.py:22`) + `assign_representation`. | Pruebas del motor (T035) |
 | Borrar | `root.remove_product` (borra sus uniones) + `remove_material_set` del conjunto propio + regenerar los que estaban unidos. Su extremo queda recto. | Validación 0 ✅ |
 
 ## R10. Tres clases de muro ⚠️

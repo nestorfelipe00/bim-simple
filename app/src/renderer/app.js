@@ -26,9 +26,9 @@ let lastContext = ""; // proyecto y piso activo: si cambian, la cadena de muros 
 const panel = new StoreyPanel({ onAction: (action, arg) => handleAction(action, arg) });
 const toolbox = new Toolbox({ onChange: (name) => setTool(name) });
 const infobox = new InfoBox({
-  onEdit: () => null, // cambios de la selección: Historia 4
+  onEdit: (changes) => dispatch("edit_walls", { ids: selection.ids, ...changes }), // FR-024, FR-025: toda la selección
   onSplit: () => splitSelected(),
-  onDelete: () => null, // borrar: Historia 4
+  onDelete: () => deleteSelected(),
   onOpenStructures: () => handleAction("structures"),
   showMessage,
 });
@@ -60,6 +60,12 @@ function setTool(name) {
   toolbox.set(name);
   if (name === "wall") selection.clear(); // elegir Muro deja la selección vacía (ui.md)
   infobox.render(state, { tool, selection: selection.walls() });
+}
+
+// Supr o el botón Borrar del Info Box (FR-026).
+function deleteSelected() {
+  if (!selection.ids.length) return null;
+  return dispatch("delete_walls", { ids: selection.ids });
 }
 
 // Separar en capas (FR-019 a FR-022): la selección pasa a las capas nuevas.
@@ -198,6 +204,10 @@ async function keyDown(event) {
   }
   if (event.key === "Escape") {
     selection.clear();
+    return true;
+  }
+  if (event.key === "Delete" && selection.ids.length) {
+    await deleteSelected();
     return true;
   }
   return false;

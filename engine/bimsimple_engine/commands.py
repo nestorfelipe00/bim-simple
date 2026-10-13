@@ -31,6 +31,8 @@ COMMANDS = {
     "create_wall": lambda project, **args: walls.create_wall(project, **args),
     "apply_structures": lambda project, **args: materials.apply_structures(project, **args),
     "split_walls": lambda project, ids: walls.split_walls(project, ids),
+    "edit_walls": lambda project, ids, **changes: walls.edit_walls(project, ids, **changes),
+    "delete_walls": lambda project, ids: walls.delete_walls(project, ids),
 }
 
 
