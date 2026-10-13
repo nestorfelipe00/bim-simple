@@ -4,7 +4,7 @@
 
 **Creada**: 2026-10-11
 
-**Estado**: Borrador
+**Estado**: Implementada (2026-10-12)
 
 **Pedido**: "quiero que los muros funcionen con capas independientes es decir que pueda modelarlos como
 muros pero despues tengan la opcion de ser separados en capas diferentes". Es la función 2 del pedido
