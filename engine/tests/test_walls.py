@@ -381,6 +381,83 @@ def test_catalogo_guardado_y_reabierto(project, tmp_path):
     assert after[1] == before[1]
 
 
+# ---------- Historia 3: separar en capas ----------
+def composite_ring(project, name="Muro exterior 30"):
+    state = three_storeys(project)
+    return state, [project.entity(i) for i in draw(project, RING, structure_id=structure_id(state, name),
+                                                   material_id=None, thickness=None)]
+
+
+def test_separar_en_capas(project, tmp_path):
+    state, ring = composite_ring(project)
+    target = ring[0]  # arriba, unido en sus dos esquinas
+    original = occ_volume(target)
+    neighbors = {w.id(): occ_volume(w) for w in (ring[1], ring[3])}
+    result = execute(project, "split_walls", {"ids": [target.id()]})
+    assert result["deleted_ids"] == [target.id()] and len(result["new_ids"]) == 4
+    assert result["changed_ids"] == result["new_ids"]
+    parts = [project.entity(i) for i in result["new_ids"]]
+    names = {m["id"]: m["name"] for m in result["state"]["materials"]}
+    info = [walls.wall_info(project, p) for p in parts]
+    assert [(names[i["layers"][0]["material_id"]], i["thickness"]) for i in info] == [
+        ("Revoque", pytest.approx(0.02)), ("Ladrillo", pytest.approx(0.20)), ("Aislación", pytest.approx(0.05)),
+        ("Revoque", pytest.approx(0.03))]
+    assert [p.Name for p in parts] == ["Muro — Revoque", "Muro — Ladrillo", "Muro — Aislación", "Muro — Revoque"]
+    assert all(i["structure_id"] is None and i["reference"] == "exterior" and i["kind"] == "custom_ends" for i in info)
+    assert sum(occ_volume(p) for p in parts) == pytest.approx(original, rel=0.001)  # SC-003
+    assert {i: occ_volume(project.entity(i)) for i in neighbors} == pytest.approx(neighbors)  # los vecinos no cambian
+    assert "Muro exterior 30" in [s["name"] for s in result["state"]["structures"]]
+    assert all(ifcopenshell.util.element.get_container(p).id() == state["active_storey_id"] for p in parts)
+    path = str(tmp_path / "separado.ifc")
+    execute(project, "save_project", {"path": path})
+    assert execute(project, "validate_file", {"path": path})["errors"] == 0
+
+
+def test_separar_deshacer_y_rehacer(project):
+    _, ring = composite_ring(project)
+    target = ring[0].id()
+    execute(project, "split_walls", {"ids": [target]})
+    execute(project, "undo", {})
+    restored = project.entity(target)
+    assert restored is not None and len(walls.path_connections(restored)) == 2
+    assert len(project.file.by_type("IfcWall")) == 4
+    execute(project, "redo", {})
+    assert len(project.file.by_type("IfcWall")) == 7
+
+
+def test_separar_varios_y_uno_de_una_capa(project):
+    _, ring = composite_ring(project)
+    basic = draw(project, [(20.0, 0.0), (24.0, 0.0)], closed=False)[0]
+    result = execute(project, "split_walls", {"ids": [ring[0].id(), ring[2].id(), basic]})
+    assert len(result["new_ids"]) == 8 and sorted(result["deleted_ids"]) == sorted([ring[0].id(), ring[2].id()])
+    assert project.entity(basic) is not None
+    with pytest.raises(EngineError) as raised:
+        execute(project, "split_walls", {"ids": [basic]})
+    assert str(raised.value) == "El muro ya tiene una sola capa."
+
+
+def test_no_se_une_a_una_capa_con_esquina_cortada(project):
+    _, ring = composite_ring(project)
+    parts = [project.entity(i) for i in execute(project, "split_walls", {"ids": [ring[0].id()]})["new_ids"]]
+    brick = parts[1]  # Ladrillo, con sus dos esquinas cortadas
+    volume = occ_volume(brick)
+    joins_before = len(project.file.by_type("IfcRelConnectsPathElements"))
+    start = walls.endpoints(project, brick)[1]
+    draw(project, [start, (start[0] + 3.0, start[1] + 3.0)], closed=False)
+    assert len(project.file.by_type("IfcRelConnectsPathElements")) == joins_before
+    assert occ_volume(brick) == pytest.approx(volume)
+
+
+def test_separar_muro_de_otro_programa(project, fixtures):
+    execute(project, "open_project", {"path": fixtures["muros_otro_programa"]})
+    wall = next(w for w in project.file.by_type("IfcWall") if w.Name == "Muro con capas")
+    volume = occ_volume(wall)
+    result = execute(project, "split_walls", {"ids": [wall.id()]})
+    parts = [project.entity(i) for i in result["new_ids"]]
+    assert len(parts) == 2
+    assert sum(occ_volume(p) for p in parts) == pytest.approx(volume, rel=0.001)
+
+
 # ---------- Base (fase 2) ----------
 def test_proyecto_nuevo_trae_el_catalogo(project):
     state = execute(project, "new_project", {})["state"]

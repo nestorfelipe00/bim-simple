@@ -480,7 +480,7 @@ mismo volumen total; Ctrl+Z lo devuelve.
 
 ### Pruebas de la Historia 3
 
-- [ ] T029 [US3] En `engine/tests/test_walls.py`:
+- [X] T029 [US3] En `engine/tests/test_walls.py`:
   - `test_separar_en_capas` (SC-003), en un recinto "Muro exterior 30":
     - separar un muro → `deleted_ids` = [muro] y 4 `new_ids`;
     - materiales y espesores (Revoque 0,02, Ladrillo 0,20, Aislación 0,05 y Revoque 0,03, ± 1 mm);
@@ -502,7 +502,7 @@ mismo volumen total; Ctrl+Z lo devuelve.
 
 ### Implementación de la Historia 3
 
-- [ ] T030 [US3] `split_walls` en `engine/bimsimple_engine/walls.py` y `commands.py` (research R8):
+- [X] T030 [US3] `split_walls` en `engine/bimsimple_engine/walls.py` y `commands.py` (research R8):
   - por cada muro con 2 o más capas que no sea `locked`:
     - polígonos de las capas;
     - por cada capa, un `IfcWall` «nombre — material» en el mismo piso, con un conjunto Básico de una capa;
@@ -515,7 +515,7 @@ mismo volumen total; Ctrl+Z lo devuelve.
   - todo en una transacción;
   - actualiza el índice;
   - devuelve `{state, deleted_ids, new_ids, changed_ids: new_ids}`.
-- [ ] T031 [US3] Crear `app/src/renderer/selection.js` ([ui.md](contracts/ui.md) "Selección"):
+- [X] T031 [US3] Crear `app/src/renderer/selection.js` ([ui.md](contracts/ui.md) "Selección"):
   - con la Flecha:
     - clic en la planta → `Raycaster` contra las mallas del piso activo;
     - clic sin arrastre en el 3D (`viewports.click3d`) → contra todas;
@@ -523,7 +523,7 @@ mismo volumen total; Ctrl+Z lo devuelve.
   - `ids()` y `set(ids)`;
   - `meshes.setSelected(ids)`;
   - después de cada respuesta del motor, `keepExisting(existingIds)`.
-- [ ] T032 [US3] En `app/src/renderer/infobox.js` y `app.js`, modo selección:
+- [X] T032 [US3] En `app/src/renderer/infobox.js` y `app.js`, modo selección:
   - sin selección: "Nada seleccionado. Clic en un muro para seleccionarlo; Shift + clic para agregar o quitar.";
   - con selección:
     - título "1 muro seleccionado" / "N muros seleccionados";
@@ -531,7 +531,7 @@ mismo volumen total; Ctrl+Z lo devuelve.
     - botón **Separar en capas**, activo si algún seleccionado tiene 2 o más capas → `dispatch("split_walls", {ids})`
       → la selección pasa a `new_ids`;
   - Muro activa la herramienta y vacía la selección.
-- [ ] T033 [US3] Sección "Muros 3 — separar" en `app/test/window-test.js`:
+- [X] T033 [US3] Sección "Muros 3 — separar" en `app/test/window-test.js`:
   - recinto "Muro exterior 30";
   - Flecha y clic sobre un muro en la planta → Info Box "1 muro seleccionado" y "Separar en capas" activo;
   - un clic → 4 muros seleccionados y el volumen sin cambios (con la suma de `wall.thickness` × longitud × altura de
@@ -540,7 +540,7 @@ mismo volumen total; Ctrl+Z lo devuelve.
   - Ctrl+Z → 1 muro;
   - Ctrl+Y → 4;
   - captura `m3`.
-- [ ] T034 [US3] Correr las dos pruebas y hacer el commit "feat: Historia 3 de la función 002, separar en capas".
+- [X] T034 [US3] Correr las dos pruebas y hacer el commit "feat: Historia 3 de la función 002, separar en capas".
 
 ---
 

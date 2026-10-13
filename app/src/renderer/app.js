@@ -8,6 +8,7 @@ import { Toolbox } from "./toolbox.js";
 import { InfoBox } from "./infobox.js";
 import { WallTool } from "./wall-tool.js";
 import { StructuresDialog } from "./structures-dialog.js";
+import { Selection } from "./selection.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_ALL = new Set(["new_project", "open_project", "undo", "redo"]);
@@ -26,10 +27,15 @@ const panel = new StoreyPanel({ onAction: (action, arg) => handleAction(action, 
 const toolbox = new Toolbox({ onChange: (name) => setTool(name) });
 const infobox = new InfoBox({
   onEdit: () => null, // cambios de la selección: Historia 4
-  onSplit: () => null, // separar en capas: Historia 3
+  onSplit: () => splitSelected(),
   onDelete: () => null, // borrar: Historia 4
   onOpenStructures: () => handleAction("structures"),
   showMessage,
+});
+const selection = new Selection({
+  viewports,
+  meshes,
+  onChange: () => infobox.render(state, { tool, selection: selection.walls() }),
 });
 const structuresDialog = new StructuresDialog();
 const wallTool = new WallTool({
@@ -52,7 +58,15 @@ function setTool(name) {
   wallTool.cancel();
   tool = name;
   toolbox.set(name);
-  infobox.render(state, { tool, selection: [] });
+  if (name === "wall") selection.clear(); // elegir Muro deja la selección vacía (ui.md)
+  infobox.render(state, { tool, selection: selection.walls() });
+}
+
+// Separar en capas (FR-019 a FR-022): la selección pasa a las capas nuevas.
+async function splitSelected() {
+  const response = await dispatch("split_walls", { ids: selection.ids });
+  if (response.ok) selection.set(response.result.new_ids);
+  return response;
 }
 
 function render() {
@@ -64,7 +78,8 @@ function render() {
   if (context !== lastContext) wallTool.cancel(); // FR-010 y casos límite: cambiar de piso o de proyecto
   lastContext = context;
   toolbox.enable(state.has_project);
-  infobox.render(state, { tool, selection: [] });
+  selection.keepExisting();
+  infobox.render(state, { tool, selection: selection.walls() });
 }
 
 async function dispatch(cmd, args = {}) {
@@ -164,8 +179,13 @@ function planPointer(type, event) {
     return null;
   }
   if (tool === "wall") return type === "move" ? wallTool.pointerMove(event) : wallTool.pointerDown(event);
+  if (type === "down" && event.button === 0) return selection.clickPlan(event); // Flecha (FR-023)
   return null;
 }
+
+viewports.on3dClick = (event, hit) => {
+  if (state.has_project && tool === "arrow") selection.click3d(event, hit);
+};
 
 async function keyDown(event) {
   const target = event.target || {};
@@ -175,6 +195,10 @@ async function keyDown(event) {
     const handled = await wallTool.key(event);
     if (handled && event.preventDefault) event.preventDefault();
     return handled;
+  }
+  if (event.key === "Escape") {
+    selection.clear();
+    return true;
   }
   return false;
 }
@@ -208,6 +232,6 @@ if (new URLSearchParams(location.search).get("test") === "1") {
   const { run } = await import("../../test/window-test.js");
   run({
     ready, getState: () => state, dispatch, handleAction, panel, viewports, meshes, showMessage,
-    toolbox, infobox, wallTool, setTool, getTool: () => tool, planPointer, keyDown, structuresDialog,
+    toolbox, infobox, wallTool, setTool, getTool: () => tool, planPointer, keyDown, structuresDialog, selection,
   });
 }

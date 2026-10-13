@@ -327,3 +327,79 @@ def create_wall(project, start, end, structure_id=None, material_id=None, thickn
         raise
     index(project).add(wall)
     return {"state": project.state(), "wall_id": wall.id(), "changed_ids": sorted(w.id() for w in touched)}
+
+
+# ---------- separar en capas (FR-019 a FR-022; research R8) ----------
+def require_walls(project, ids):
+    project.require_project()
+    found = [project.entity(i) if isinstance(i, int) else None for i in ids or []]
+    if not found or any(not is_wall(w) for w in found):
+        raise EngineError("Uno de los muros elegidos ya no existe.")
+    return found
+
+
+def own_layer_set(project, wall):
+    """El conjunto de capas propio de un muro Básico (no el de un tipo ni uno compartido), o None."""
+    if structure_of(wall) is not None:
+        return None
+    usage = layers.usage_of(wall)
+    if usage is None:
+        return None
+    others = [u for u in project.file.get_inverse(usage.ForLayerSet) if u.is_a("IfcMaterialLayerSetUsage") and u != usage]
+    return None if others else usage.ForLayerSet
+
+
+def separate_layer(project, wall, layer, polygon, z0, depth, sense):
+    """Un muro Básico con la forma exacta de una capa: ubicado sobre su cara exterior, sin uniones (research R8)."""
+    import ifcopenshell.util.shape_builder
+
+    f = project.file
+    scale = project.unit_scale()
+    body, axis = _contexts(project)
+    y_face = float(polygon[:, 1].max() if sense == "NEGATIVE" else polygon[:, 1].min())
+    on_face = polygon[np.abs(polygon[:, 1] - y_face) <= layers.TOL]
+    xs = on_face[:, 0] if len(on_face) else polygon[:, 0]
+    x0, x1 = float(xs.min()), float(xs.max())
+    name = f"{wall.Name or 'Muro'} — {layer.Material.Name if layer.Material else 'Capa'}"
+    part = ifcopenshell.api.root.create_entity(f, ifc_class="IfcWall", name=name)
+    ifcopenshell.api.spatial.assign_container(f, products=[part], relating_structure=ifcopenshell.util.element.get_container(wall))
+    ifcopenshell.api.material.assign_material(f, products=[part], type="IfcMaterialLayerSetUsage",
+                                              material=basic_layer_set(project, layer.Material, float(layer.LayerThickness) * scale))
+    ifcopenshell.api.material.edit_layer_usage(f, usage=layers.usage_of(part), attributes={
+        "DirectionSense": sense, "OffsetFromReferenceLine": 0.0})
+    shift = np.eye(4)
+    shift[0][3], shift[1][3] = x0, y_face
+    ifcopenshell.api.geometry.edit_object_placement(f, product=part, matrix=placement_matrix(project, wall) @ shift)
+    builder = ifcopenshell.util.shape_builder.ShapeBuilder(f)
+    local = [((float(x) - x0) / scale, (float(y) - y_face) / scale) for x, y in polygon]
+    solid = builder.extrude(builder.profile(builder.polyline(local, closed=True)), magnitude=depth / scale,
+                            position=(0.0, 0.0, z0 / scale))
+    ifcopenshell.api.geometry.assign_representation(f, product=part, representation=builder.get_representation(body, [solid]))
+    rep = ifcopenshell.api.geometry.add_axis_representation(f, context=axis, axis=[(0.0, 0.0), ((x1 - x0) / scale, 0.0)])
+    ifcopenshell.api.geometry.assign_representation(f, product=part, representation=rep)
+    return part
+
+
+def split_walls(project, ids):
+    found = require_walls(project, ids)
+    targets = [w for w in found if kind_of(project, w) != "locked" and len(thicknesses(project, w)) >= 2]
+    if not targets:
+        raise EngineError("El muro ya tiene una sola capa.")
+
+    def apply():
+        new_ids, deleted = [], []
+        for wall in targets:
+            usage = layers.usage_of(wall)
+            own = own_layer_set(project, wall)
+            for layer, polygon, z0, depth in layers.layer_polygons(wall, project.unit_scale()):
+                if len(polygon) >= 3:
+                    new_ids.append(separate_layer(project, wall, layer, polygon, z0, depth, usage.DirectionSense).id())
+            deleted.append(wall.id())
+            ifcopenshell.api.root.remove_product(project.file, product=wall)  # también sus uniones
+            if own is not None:
+                ifcopenshell.api.material.remove_material_set(project.file, material=own)
+        return new_ids, deleted
+
+    new_ids, deleted = project.transaction(apply)
+    project.discard_index()
+    return {"state": project.state(), "deleted_ids": deleted, "new_ids": new_ids, "changed_ids": list(new_ids)}

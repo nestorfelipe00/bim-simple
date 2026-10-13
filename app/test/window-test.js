@@ -487,3 +487,47 @@ addSection(async function muros2(t) {
   t.app.viewports.fit({ animate: false });
   await t.capture("m2");
 });
+
+// Recinto de 6 × 4 m con "Muro exterior 30" en el Piso 1 (para separar, cambiar y borrar).
+async function compositeRing(t) {
+  const piso1 = await threeStoreys(t);
+  t.app.setTool("wall");
+  choose("ib-structure", "Muro exterior 30");
+  for (const [x, y] of [[0, 4], [6, 4], [6, 0], [0, 0], [0, 4]]) await click(t, x, y);
+  t.app.setTool("arrow");
+  return piso1;
+}
+
+addSection(async function muros3(t) {
+  const S = "Muros 3 — separar";
+  const piso1 = await compositeRing(t);
+  t.step(S, "Flecha sin selección: «Nada seleccionado…» (contracts/ui.md)", !document.getElementById("ib-empty").hidden);
+  await click(t, 3, 3.85); // sobre el muro de arriba
+  const split = document.getElementById("ib-split");
+  t.step(S, "Clic en un muro compuesto: «1 muro seleccionado» y «Separar en capas» activo (FR-019, FR-023)",
+    document.getElementById("ib-title").textContent === "1 muro seleccionado" && !split.hidden && !split.disabled && t.app.selection.ids.length === 1,
+    document.getElementById("ib-title").textContent);
+  const target = t.app.selection.ids[0];
+  const neighbors = JSON.stringify(t.app.meshes.walls(piso1).filter((w) => w.id !== target).map((w) => [w.start, w.end]));
+  const areaBefore = planArea(t, piso1);
+  split.click(); // un clic (SC-003)
+  await waitFor(() => t.app.selection.ids.length === 4, 5000, 20);
+  const parts = t.app.selection.walls();
+  t.step(S, "Separar en capas: 4 muros de una capa, seleccionados (FR-020, FR-021)",
+    parts.length === 4 && parts.every((w) => w.layers.length === 1 && w.structure_id === null) && document.getElementById("ib-title").textContent === "4 muros seleccionados",
+    parts.map((w) => w.thickness));
+  const areaAfter = planArea(t, piso1);
+  t.step(S, `En pantalla nada se mueve: superficie en planta ${areaBefore.toFixed(4)} → ${areaAfter.toFixed(4)} m² y vecinos iguales (FR-020)`,
+    Math.abs(areaBefore - areaAfter) < 1e-6 &&
+    JSON.stringify(t.app.meshes.walls(piso1).filter((w) => !parts.some((p) => p.id === w.id)).map((w) => [w.start, w.end])) === neighbors,
+    { areaBefore, areaAfter });
+  await t.app.handleAction("undo");
+  t.step(S, "Ctrl+Z: vuelve el muro compuesto (FR-022)", t.app.meshes.walls(piso1).length === 4 && t.app.meshes.wall(target) !== null);
+  await t.app.handleAction("redo");
+  t.step(S, "Ctrl+Y: vuelven las 4 capas", t.app.meshes.walls(piso1).length === 7);
+  await click(t, 3, 3.85);
+  await press(t, "Escape");
+  t.step(S, "Esc deja todo sin seleccionar (FR-023)", t.app.selection.ids.length === 0 && !document.getElementById("ib-empty").hidden);
+  t.app.viewports.fit({ animate: false });
+  await t.capture("m3");
+});

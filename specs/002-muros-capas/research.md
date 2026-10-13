@@ -236,7 +236,9 @@ de OpenCASCADE, como en la función 001, con el color de su primera capa si la t
 4. **Cuerpo**: `ShapeBuilder.extrude(profile(polyline(polígono, closed=True)), magnitude=Depth)`
    (`util/shape_builder.py:440`, `727`, `1179`) y `get_representation(Body, [sólido])` (`1244`). Es un `SweptSolid`
    que conserva los cortes de las esquinas.
-5. **Eje**: `add_axis_representation` con la misma longitud.
+5. **Eje**: `add_axis_representation` sobre la cara exterior de la capa, del primer al último punto del polígono en
+   esa cara. En una esquina con inglete, las capas interiores son más cortas, así que su eje también: el imán cae en
+   sus esquinas reales (ajuste de la implementación, T030).
 6. Sin uniones.
 7. Al final, `root.remove_product(original)`: borra también sus `IfcRelConnectsPathElements`
    (`api/root/remove_product.py:165-174`). Si el original era Básico, también se borra su conjunto con

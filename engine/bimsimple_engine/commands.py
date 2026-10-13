@@ -30,6 +30,7 @@ COMMANDS = {
     # función 002 (specs/002-muros-capas/contracts/core_api.md)
     "create_wall": lambda project, **args: walls.create_wall(project, **args),
     "apply_structures": lambda project, **args: materials.apply_structures(project, **args),
+    "split_walls": lambda project, ids: walls.split_walls(project, ids),
 }
 
 
