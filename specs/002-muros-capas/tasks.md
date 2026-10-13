@@ -210,8 +210,8 @@ herramientas e Info Box, y menú Opciones.
     px).
 - [ ] T011 [P] Mallas en `app/src/renderer/meshes.js`:
   - si `item.groups` no está vacío:
-    - `geometry.addGroup(start, count, i)` por grupo, **antes** de `toNonIndexed()`, o recalculando los rangos sobre
-      la geometría no indexada (`start` y `count` × 1, porque `toNonIndexed` conserva el orden de los triángulos);
+    - `geometry.addGroup(start, count, i)` por grupo, **antes** de `toNonIndexed()`, que copia los grupos con los
+      mismos rangos (`three/src/core/BufferGeometry.js:1123`, verificado);
     - el material es un arreglo con un `MeshStandardMaterial` por grupo, del color de `state.materials` por
       `material_id`;
   - guardar `mesh.userData.wall = item.wall`;
@@ -275,8 +275,12 @@ guardar y volver a abrir: 4 muros en el Piso 1, con el espesor y la altura del I
     En cada caso, la cantidad de entidades del archivo no cambia.
   - `test_deshacer_un_muro`: Ctrl+Z quita el muro y su unión; el muro siguiente vuelve a unirse bien (índice
     descartado).
-  - `test_muros_guardados_y_reabiertos` (SC-004): guardar, `open_project`, y cada `wall_info` es igual al de antes
-    (± 1 mm).
+  - `test_muros_guardados_y_reabiertos` (SC-004; constitución, Principio V): guardar, `open_project`, y cada
+    `wall_info` es igual al de antes (± 1 mm). Las **uniones** también: el conjunto de pares de muros unidos, con
+    `RelatingConnectionType`/`RelatedConnectionType`, es el mismo.
+  - `test_mover_piso_y_seguir_dibujando` (caso límite): recinto en el Piso 1, cambiar la cota del Piso 1 con
+    `edit_storey`, dibujar un muro desde un extremo del recinto → queda unido (el índice se rearmó). Cambiar la
+    altura del Piso 1 no cambia la altura de sus muros.
   - `test_validacion_con_muros` (SC-005): `validate_file` da 0 errores.
   - `test_muro_numero_201_rapido` (SC-006): 50 recintos (200 muros) en un piso, y el muro 201 tarda < 0,2 s en
     `create_wall`, medido con `time.perf_counter`.
@@ -356,9 +360,11 @@ guardar y volver a abrir: 4 muros en el Piso 1, con el espesor y la altura del I
   `#plan-view` en `viewports.worldToClient(x, y)`.
   - **Preparación**: proyecto nuevo con pisos 0/3/6, Piso 1 activo y herramienta Muro.
   - **Info Box**: muestra "Básica", "Hormigón", "0,20", "3,00" y Exterior.
-  - **Cadena**: 4 clics en (0,4), (6,4), (6,0) y (0,0), y un clic en (0,4) → 4 muros del Piso 1; la superficie en
-    planta (suma de las áreas de los grupos vistos desde arriba, o `wall.thickness × longitudes − solapes`) es 3,84
-    (SC-002); 4 esquinas.
+  - **Cadena**: 4 clics en (0,4), (6,4), (6,0) y (0,0), y un clic en (0,4) → 4 muros del Piso 1. La superficie en
+    planta es 3,84 ± 0,1 % (SC-002): la suma de las áreas de los triángulos de las mallas de muro con normal +Z (las
+    tapas de arriba).
+  - **Cambiar de piso**: empezar una cadena, hacer doble clic en otro piso → la cadena terminó (el próximo clic
+    empieza una nueva).
   - **Shift + longitud**: un muro empezado en (10,0), Shift con el ratón cerca de 44°, escribir `4,5` + Enter → muro
     de 4,50 m a 45°.
   - **Imán**: un clic a 5 px de un extremo existente → el muro empieza exactamente en el extremo.
@@ -482,6 +488,7 @@ mismo volumen total; Ctrl+Z lo devuelve.
     - nombres «Muro — Revoque», etc.;
     - cada capa es `Básica` con referencia `exterior`;
     - las de la esquina son `custom_ends`;
+    - "Muro exterior 30" sigue en `state.structures` aunque ya no la use ese muro;
     - validación 0.
   - `test_separar_deshacer_y_rehacer`: Ctrl+Z → vuelve el muro con sus 2 uniones; Ctrl+Y → las 4 capas.
   - `test_separar_varios_y_uno_de_una_capa`:
@@ -569,7 +576,13 @@ reabrir: igual.
     - se borra el conjunto Básico propio;
     - Ctrl+Z lo devuelve;
     - validación 0.
-  - `test_cambios_guardados_y_reabiertos` (SC-004).
+  - `test_cambios_guardados_y_reabiertos` (SC-004; Principio V): después de los cambios, guardar y volver a abrir →
+    mismos `wall_info` y mismas uniones.
+  - `test_muros_de_otro_programa_se_conservan` (FR-029): abrir `muros_otro_programa`, dibujar y borrar un muro,
+    guardar y volver a abrir → los dos muros `locked` tienen la misma representación (mismas entidades del cuerpo y
+    mismo volumen OpenCASCADE).
+  - Primero comprobar `type.unassign_type` con un script corto (que quita el tipo y la usage queda sin conjunto) y
+    anotarlo en research R9 (Principio IV).
 
 ### Implementación de la Historia 4
 
@@ -586,8 +599,7 @@ reabrir: igual.
     - `edit_layer(LayerThickness)` + desplazamiento según la referencia;
     - `regenerable`: regenerar el muro y sus unidos;
     - `custom_ends`: `layers.extend_ends` y reemplazar el perfil del sólido (`ShapeBuilder`); si devuelve `None`,
-      error "El espesor de esta capa no se puede cambiar porque su forma no es un tramo recto." (agregarlo a
-      core_api.md).
+      error "El espesor de esta capa no se puede cambiar porque su forma no es un tramo recto." (core_api.md).
   - **Borrar**:
     - `remove_product`;
     - `remove_material_set` del conjunto propio si no lo usa otro;

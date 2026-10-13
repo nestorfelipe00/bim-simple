@@ -62,6 +62,7 @@ Sigue igual todo lo que allí se dice:
 | Muro inexistente | "Uno de los muros elegidos ya no existe." |
 | Muro no editable | "BIM Simple no puede cambiar la forma de este muro (viene de otro programa)." |
 | Cambiar la estructura o el espesor con línea de referencia "Otra" | "Este muro tiene una línea de referencia que BIM Simple no maneja; solo se puede cambiar su altura y su material." |
+| Cambiar el espesor de una capa con extremos propios que no es un cuadrilátero | "El espesor de esta capa no se puede cambiar porque su forma no es un tramo recto." |
 | Separar sin muros de varias capas | "El muro ya tiene una sola capa." |
 | Nombre de estructura vacío | "El nombre no puede quedar vacío." |
 | Nombre de estructura repetido | «Ya existe una estructura llamada «X».» |

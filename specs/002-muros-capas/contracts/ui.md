@@ -153,7 +153,7 @@ Diálogo modal de la página (`<dialog>`), como "Editar piso" de la función 001
 | Espesor inválido | "El espesor debe ser mayor que 0." |
 | Altura inválida | "La altura debe ser mayor que 0." |
 | Longitud escrita inválida (interfaz) | "La longitud debe ser mayor que 0." |
-| Muro de menos de 1 cm | "El muro es demasiado corto (mínimo 1 cm)." |
+| Muro de menos de 1 cm (control del motor; la interfaz no manda esos muros) | "El muro es demasiado corto (mínimo 1 cm)." |
 | Separar un muro de una capa | "El muro ya tiene una sola capa." |
 | Cambiar un muro no editable | "BIM Simple no puede cambiar la forma de este muro (viene de otro programa)." |
 | Nombre de estructura repetido / vacío | «Ya existe una estructura llamada «X».» / «El nombre no puede quedar vacío.» |
