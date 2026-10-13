@@ -17,8 +17,11 @@ export class Viewports {
     this.planLabel = planLabel;
     this.groups = new Map(); // piso (id o "none") → THREE.Group
     this.activeStorey = null;
+    this.activeElevation = 0;
     this.lastPlanVisible = [];
     this.last3dVisible = [];
+    this.materials = { plan: (mesh) => mesh.userData.material, view3d: (mesh) => mesh.userData.material };
+    this.raycaster = new THREE.Raycaster();
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -28,10 +31,13 @@ export class Viewports {
     const sun = new THREE.DirectionalLight("#ffffff", 1.4);
     sun.position.set(10, -14, 20);
     this.scene.add(sun);
-    const grid = new THREE.GridHelper(60, 60, "#c9c5bd", "#e2dfd9");
+    const grid = new THREE.GridHelper(200, 200, "#c9c5bd", "#e2dfd9"); // líneas cada 1,00 m (FR-009)
     grid.rotation.x = Math.PI / 2;
     this.scene.add(grid);
-    this.planMaterial = new THREE.MeshBasicMaterial({ color: "#4a4741" }); // relleno oscuro en planta
+    // Vista previa del dibujo (función 002): solo en la planta, fuera de los grupos de pisos.
+    this.overlay = new THREE.Group();
+    this.overlay.renderOrder = 10;
+    this.scene.add(this.overlay);
 
     // Planta: ortogonal, desde arriba, sin rotación; la rueda acerca hacia el ratón.
     this.planCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
@@ -59,18 +65,26 @@ export class Viewports {
     this.controls3d.draggingSmoothTime = 0.06;
     this.controls3d.setLookAt(15, -13, 11, 3, 2, 1.5, false);
 
-    const raycaster = new THREE.Raycaster();
     view3dDiv.addEventListener(
       "pointerdown",
       (event) => {
         const rotate = event.button === 0 || (event.button === 1 && event.shiftKey);
         this.controls3d.mouseButtons.middle = event.shiftKey ? CameraControls.ACTION.ROTATE : CameraControls.ACTION.TRUCK;
+        if (event.button === 0) this.down3d = { x: event.clientX, y: event.clientY };
         if (!rotate) return;
-        const box = view3dDiv.getBoundingClientRect();
-        const pointer = new THREE.Vector2(((event.clientX - box.left) / box.width) * 2 - 1, -((event.clientY - box.top) / box.height) * 2 + 1);
-        raycaster.setFromCamera(pointer, this.camera3d);
-        const hit = raycaster.intersectObjects(this.meshes(), false)[0];
+        const hit = this.hit3d(event);
         if (hit) this.controls3d.setOrbitPoint(hit.point.x, hit.point.y, hit.point.z);
+      },
+      { capture: true }
+    );
+    // Clic sin arrastre en el 3D (menos de 4 px): elige un elemento (función 002, research R12).
+    view3dDiv.addEventListener(
+      "pointerup",
+      (event) => {
+        const down = this.down3d;
+        this.down3d = null;
+        if (event.button !== 0 || !down || Math.hypot(event.clientX - down.x, event.clientY - down.y) >= 4) return;
+        if (this.on3dClick) this.on3dClick(event, this.hit3d(event));
       },
       { capture: true }
     );
@@ -100,10 +114,57 @@ export class Viewports {
     return [...this.groups.values()].flatMap((group) => group.children);
   }
 
-  setActiveStorey(id, name) {
+  // Quién decide el material de cada malla en cada vista (meshes.js: capas, colores y selección).
+  setMaterialProvider(provider) {
+    this.materials = provider;
+  }
+
+  setActiveStorey(id, name, elevation = 0) {
     this.activeStorey = id;
+    this.activeElevation = elevation;
     this.planLabel.textContent = name ? `Planta — ${name}` : "Planta";
     this.draw();
+  }
+
+  // ---------- ratón (función 002, research R12) ----------
+  pointer(event, div) {
+    const box = div.getBoundingClientRect();
+    return new THREE.Vector2(((event.clientX - box.left) / box.width) * 2 - 1, -((event.clientY - box.top) / box.height) * 2 + 1);
+  }
+
+  // Punto de la planta bajo el ratón, sobre el plano de la cota del piso activo: {x, y} en metros.
+  planPoint(event) {
+    this.raycaster.setFromCamera(this.pointer(event, this.planDiv), this.planCamera);
+    const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -this.activeElevation);
+    const point = this.raycaster.ray.intersectPlane(plane, new THREE.Vector3());
+    return point ? { x: point.x, y: point.y } : null;
+  }
+
+  // Tamaño de un píxel de la planta, en metros.
+  pixelsToMeters(px) {
+    const visible = (this.planCamera.top - this.planCamera.bottom) / this.planCamera.zoom;
+    return (px * visible) / Math.max(1, this.planDiv.clientHeight);
+  }
+
+  // Elemento de la planta bajo el ratón (solo el piso activo).
+  hitPlan(event) {
+    const group = this.groups.get(this.activeStorey ?? "none");
+    if (!group) return null;
+    this.raycaster.setFromCamera(this.pointer(event, this.planDiv), this.planCamera);
+    return this.raycaster.intersectObjects(group.children, false)[0] || null;
+  }
+
+  // Elemento del 3D bajo el ratón (todos los pisos).
+  hit3d(event) {
+    this.raycaster.setFromCamera(this.pointer(event, this.view3dDiv), this.camera3d);
+    return this.raycaster.intersectObjects(this.meshes(), false)[0] || null;
+  }
+
+  // Para la prueba del programa: dónde está un punto de la planta en la pantalla.
+  worldToClient(x, y) {
+    const ndc = new THREE.Vector3(x, y, this.activeElevation).project(this.planCamera);
+    const box = this.planDiv.getBoundingClientRect();
+    return { clientX: box.left + ((ndc.x + 1) / 2) * box.width, clientY: box.top + ((1 - ndc.y) / 2) * box.height };
   }
 
   draw() {
@@ -126,7 +187,8 @@ export class Viewports {
       group.visible = key === this.activeStorey;
       if (group.visible && group.children.length) this.lastPlanVisible.push(key);
     }
-    for (const mesh of this.meshes()) mesh.material = this.planMaterial;
+    for (const mesh of this.meshes()) mesh.material = this.materials.plan(mesh);
+    this.overlay.visible = true;
     this.renderer.setViewport(0, 0, half, height);
     this.renderer.setScissor(0, 0, half, height);
     this.renderer.render(this.scene, this.planCamera);
@@ -137,7 +199,8 @@ export class Viewports {
       group.visible = true;
       if (group.children.length) this.last3dVisible.push(key);
     }
-    for (const mesh of this.meshes()) mesh.material = mesh.userData.material;
+    for (const mesh of this.meshes()) mesh.material = this.materials.view3d(mesh);
+    this.overlay.visible = false;
     this.camera3d.aspect = (width - half) / height;
     this.camera3d.updateProjectionMatrix();
     this.renderer.setViewport(half, 0, width - half, height);

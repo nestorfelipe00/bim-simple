@@ -51,9 +51,9 @@ pruebas automáticas en verde (también las de la función 001) y un commit.
 
 ## Fase 1: Preparación
 
-- [ ] T001 Correr las dos pruebas de la función 001 antes de tocar nada y anotar la salida como línea de base:
+- [X] T001 Correr las dos pruebas de la función 001 antes de tocar nada y anotar la salida como línea de base:
   `28 passed` y `RESULTADO: TODO OK` (46 pasos).
-- [ ] T002 [P] Crear los iconos propios en `app/src/renderer/icons/`, en SVG de 24 × 24 con trazo `#26231f` y sin
+- [X] T002 [P] Crear los iconos propios en `app/src/renderer/icons/`, en SVG de 24 × 24 con trazo `#26231f` y sin
   texto:
   - `arrow.svg`: flecha de selección inclinada;
   - `wall.svg`: muro en planta, un rectángulo con dos líneas internas que marcan capas.
@@ -65,7 +65,7 @@ pruebas automáticas en verde (también las de la función 001) y un commit.
 **Propósito**: catálogo y materiales en el motor, datos y capas de los muros, mallas con grupos, pantalla con caja de
 herramientas e Info Box, y menú Opciones.
 
-- [ ] T003 Crear `engine/bimsimple_engine/materials.py` (research R7, R11; [data-model.md](data-model.md) §1-2):
+- [X] T003 Crear `engine/bimsimple_engine/materials.py` (research R7, R11; [data-model.md](data-model.md) §1-2):
   - Paleta `DEFAULT_MATERIALS` con los nombres y colores de research R7, en orden: Hormigón `#b5b5b0`,
     Ladrillo `#c1694f`, Bloque de hormigón `#9a9a94`, Revoque `#e8e2d4`, Aislación `#f2d24b`, Placa de yeso
     `#f4f4f0`, Madera `#b9875a`.
@@ -97,7 +97,7 @@ herramientas e Info Box, y menú Opciones.
       [{material_id, thickness}]}`, con las capas en el orden del conjunto, de exterior a interior.
   - `add_default_catalog(project)`: crea los 7 materiales y las 3 estructuras.
   - Todo en metros: los proyectos de BIM Simple están en metros.
-- [ ] T004 En `engine/bimsimple_engine/project.py` y `storeys.py`:
+- [X] T004 En `engine/bimsimple_engine/project.py` y `storeys.py`:
   - `Project.__init__` agrega `self.endpoint_index = None` y el método `discard_index()`, que lo pone en `None`.
   - `state()` agrega `"materials": materials.list_materials(self)` y `"structures":
     materials.list_structures(self)`. Sin proyecto, `[]` y `[]`.
@@ -106,7 +106,7 @@ herramientas e Info Box, y menú Opciones.
   - `replace_file`, `undo` y `redo` llaman a `discard_index()`.
   - En `storeys.py`, `edit_storey` y `delete_storey` llaman a `project.discard_index()` después de cambiar algo
     (research R5).
-- [ ] T005 [P] Crear `engine/bimsimple_engine/layers.py`: geometría de capas, código propio (research R6, R10).
+- [X] T005 [P] Crear `engine/bimsimple_engine/layers.py`: geometría de capas, código propio (research R6, R10).
   - `body_solid(wall)`:
     - con `util.representation.get_representation(wall, "Model", "Body", "MODEL_VIEW")`, devuelve el
       `IfcExtrudedAreaSolid` si la representación tiene **un solo** ítem de esa clase, con `ExtrudedDirection` (0, 0,
@@ -136,7 +136,7 @@ herramientas e Info Box, y menú Opciones.
     - el polígono tiene que ser un cuadrilátero con dos aristas sobre `y = face_y` y `y = old_inner_y`;
     - las otras dos aristas se prolongan como rectas hasta `y = new_inner_y`;
     - si no es un cuadrilátero así, `None`.
-- [ ] T006 Crear `engine/bimsimple_engine/walls.py`, base de datos de muros (research R3, R5, R10; data-model §3, §4,
+- [X] T006 Crear `engine/bimsimple_engine/walls.py`, base de datos de muros (research R3, R5, R10; data-model §3, §4,
   §6):
   - `endpoints(wall)`: extremos del eje (`util.representation.get_reference_line`) llevados al mundo con
     `get_local_placement`; `[(x, y), (x, y)]` en metros.
@@ -161,7 +161,7 @@ herramientas e Info Box, y menú Opciones.
     - se arma perezoso con todos los `IfcWall` del piso que no son `locked`;
     - métodos `add(wall)`, `remove(wall_id)` y `near(storey_id, point)`, que devuelve los ids con un extremo a menos
       de 1 mm (revisa la celda redondeada y sus vecinas).
-- [ ] T007 Ampliar `engine/bimsimple_engine/geometry.py` ([data-model.md](data-model.md) §5):
+- [X] T007 Ampliar `engine/bimsimple_engine/geometry.py` ([data-model.md](data-model.md) §5):
   - cada malla suma `"groups": []` y `"wall": walls.wall_info(...)` si es `IfcWall`, si no `None`;
   - para un `IfcWall` `regenerable` o `custom_ends` cuyos polígonos de capa (`layers.layer_polygons`) sean todos
     convexos y no vacíos, la malla se arma con `layers.prism` por capa:
@@ -169,7 +169,7 @@ herramientas e Info Box, y menú Opciones.
     - `groups` = `[{start, count, material_id}]`, con `start` y `count` en índices de `faces` (múltiplos de 3);
   - el resto sigue igual (OpenCASCADE, `groups` vacío).
   - Mantener la nota sobre `enable-layerset-slicing` y citar research R6.
-- [ ] T008 [P] Ampliar `engine/tests/make_fixtures.py` con `muros_otro_programa.ifc`, en metros, con un piso
+- [X] T008 [P] Ampliar `engine/tests/make_fixtures.py` con `muros_otro_programa.ifc`, en metros, con un piso
   "Planta Baja" a 0,00 y tres muros:
   - **"Muro con capas"**:
     - tipo con 2 capas (Ladrillo 0,15 y Revoque 0,02) asignado con `type.assign_type`;
@@ -185,7 +185,7 @@ herramientas e Info Box, y menú Opciones.
     simple.
 
   Crear también los contextos Plan y Plan/Axis/GRAPH_VIEW en ese archivo.
-- [ ] T009 Crear `engine/tests/test_walls.py` con las pruebas de la base (deben pasar al terminar T003-T008):
+- [X] T009 Crear `engine/tests/test_walls.py` con las pruebas de la base (deben pasar al terminar T003-T008):
   - `test_proyecto_nuevo_trae_el_catalogo`:
     - `state.materials` tiene los 7 nombres con sus colores exactos;
     - `state.structures` tiene los 3 nombres, ordenados, con espesores 0,25, 0,30 y 0,15 y capas exactas;
@@ -197,7 +197,7 @@ herramientas e Info Box, y menú Opciones.
     referencia `"other"` en el primero.
   - `test_mallas_con_grupos`: en el recinto anterior, cada malla de muro tiene un grupo por capa, con `count`
     múltiplo de 3 y la suma de `count` igual a `len(faces)`.
-- [ ] T010 [P] Pantalla en `app/src/renderer/index.html` y `styles.css` ([contracts/ui.md](contracts/ui.md),
+- [X] T010 [P] Pantalla en `app/src/renderer/index.html` y `styles.css` ([contracts/ui.md](contracts/ui.md),
   "Pantalla"):
   - `body` pasa a columna: arriba `<header id="infobox">` a todo el ancho (~44 px) y debajo una fila con
     `<nav id="toolbox">` (44 px), `<main id="views">` y `<aside id="panel">`;
@@ -208,7 +208,7 @@ herramientas e Info Box, y menú Opciones.
     `<input type="color">`), zona de error, Cancelar y Aceptar;
   - estilos de la herramienta activa (fondo `--activo`), de los campos del Info Box y del diálogo (más ancho: ~720
     px).
-- [ ] T011 [P] Mallas en `app/src/renderer/meshes.js`:
+- [X] T011 [P] Mallas en `app/src/renderer/meshes.js`:
   - si `item.groups` no está vacío:
     - `geometry.addGroup(start, count, i)` por grupo, **antes** de `toNonIndexed()`, que copia los grupos con los
       mismos rangos (`three/src/core/BufferGeometry.js:1123`, verificado);
@@ -219,7 +219,7 @@ herramientas e Info Box, y menú Opciones.
     (`MeshBasicMaterial` del mismo color, para la planta) y `setSelected(ids)` (material azul `#2f6fd6` en las dos
     vistas para los seleccionados);
   - `walls(storeyId)`: lista de `userData.wall` del piso.
-- [ ] T012 [P] Vistas en `app/src/renderer/viewports.js`:
+- [X] T012 [P] Vistas en `app/src/renderer/viewports.js`:
   - En `draw()`, la planta usa `meshes.planMaterialsFor(mesh)` (en lugar de un solo `planMaterial`), y el 3D,
     `mesh.userData.material` o el de selección.
   - `overlay`: `THREE.Group` aparte, siempre visible en la planta y oculto en el 3D, para la vista previa.
@@ -232,13 +232,13 @@ herramientas e Info Box, y menú Opciones.
     `pointerdown` y `pointerup` (`Raycaster` contra `meshes()`).
   - `worldToClient(x, y)` (para la prueba del programa).
   - Ampliar la grilla a 200 m (`GridHelper(200, 200)`).
-- [ ] T013 Menú en `app/src/main/main.js`:
+- [X] T013 Menú en `app/src/main/main.js`:
   - agregar entre "Edición" y "Ayuda" `{label: "Opciones", submenu: [{label: "Estructuras compuestas…", enabled:
     !!state.has_project, click: sendMenu("structures")}]}`;
   - en `app/test/window-test.js`, `EXPECTED_MENUS` suma `{label: "Opciones", items: ["Estructuras compuestas…"]}`
     entre Edición y Ayuda, y el texto del paso pasa a "Menús Archivo, Edición, Opciones y Ayuda con sus textos
     (FR-003, FR-030)".
-- [ ] T014 Correr las dos pruebas. Esperado: la función 001 sigue en verde y pasan las de T009. Commit "feat: base de
+- [X] T014 Correr las dos pruebas. Esperado: la función 001 sigue en verde y pasan las de T009. Commit "feat: base de
   muros con capas (función 002, fase 2)".
 
 **Punto de control**: el catálogo existe en los proyectos nuevos, los muros de otros programas se clasifican y la
@@ -301,7 +301,8 @@ guardar y volver a abrir: 4 muros en el Piso 1, con el espesor y la altura del I
      - `assign_type` (una llamada), o el conjunto Básico de una capa (LayerSetName "Básica") +
        `assign_material(type="IfcMaterialLayerSetUsage", material=conjunto)`;
      - `edit_layer_usage(DirectionSense="NEGATIVE", OffsetFromReferenceLine=0, T/2 o T)`;
-     - `create_2pt_wall(elevation=0.0)` + `assign_representation`;
+     - `create_2pt_wall(elevation=cota del piso activo)` + `assign_representation` (la matriz es absoluta y
+       `edit_object_placement` la pasa a relativa al piso, `edit_object_placement.py:175-194`);
      - eje Plan/Axis;
      - `connect_wall` con cada id de `endpoint_index.near` en `start` y `end`, que no sea `custom_ends` ni `locked`;
      - `regenerate_wall_representation(length=1.0, height=Depth)` del nuevo y los unidos.

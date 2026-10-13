@@ -12,7 +12,7 @@ import ifcopenshell.api.unit
 import ifcopenshell.util.unit
 import ifcopenshell.validate
 
-from . import EngineError, storeys
+from . import EngineError, materials, storeys
 
 
 class Project:
@@ -21,6 +21,11 @@ class Project:
         self.path = ""  # vacío si nunca se guardó
         self.dirty = False
         self.active_storey_id = None  # ajuste de la interfaz: vive aquí, no en el IFC
+        self.endpoint_index = None  # extremos de muros por piso (research R5); fuera del IFC
+
+    def discard_index(self):
+        """Después de abrir, deshacer, rehacer o mover pisos, los extremos pueden estar en otro lugar."""
+        self.endpoint_index = None
 
     # ---------- utilidades ----------
     def require_project(self):
@@ -56,12 +61,14 @@ class Project:
         self.path = path
         self.dirty = False
         self.active_storey_id = storeys.nearest_to_zero(self)
+        self.discard_index()
 
     # ---------- estado para la interfaz (contracts/core_api.md, "Estado") ----------
     def state(self):
         if self.file is None:
             return {"has_project": False, "has_building": False, "path": "", "dirty": False, "storeys": [],
-                    "active_storey_id": None, "notice": "", "can_undo": False, "can_redo": False}
+                    "active_storey_id": None, "notice": "", "can_undo": False, "can_redo": False,
+                    "materials": [], "structures": []}
         return {
             "has_project": True,
             "has_building": storeys.building(self) is not None,
@@ -72,6 +79,8 @@ class Project:
             "notice": storeys.notice(self),
             "can_undo": len(self.file.history) > 0,
             "can_redo": len(self.file.future) > 0,
+            "materials": materials.list_materials(self),
+            "structures": materials.list_structures(self),
         }
 
 
@@ -99,6 +108,7 @@ def new_project(project):
     project.file = f
     try:
         storeys.create_storey(project, "Planta Baja", 0.0, storeys.DEFAULT_HEIGHT)
+        materials.add_default_catalog(project)  # antes de replace_file, que vacía el historial
     except Exception:
         project.file = previous  # si algo falla, sigue abierto el proyecto anterior
         raise
@@ -151,6 +161,7 @@ def undo(project):
         raise EngineError("No hay nada que deshacer.")
     project.file.undo()
     project.dirty = True
+    project.discard_index()
     _keep_active_storey(project)
     return {"state": project.state()}
 
@@ -161,5 +172,6 @@ def redo(project):
         raise EngineError("No hay nada que rehacer.")
     project.file.redo()
     project.dirty = True
+    project.discard_index()
     _keep_active_storey(project)
     return {"state": project.state()}

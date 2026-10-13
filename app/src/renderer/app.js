@@ -24,9 +24,10 @@ function showMessage(text, isError = false) {
 }
 
 function render() {
+  meshes.setMaterials(state.materials);
   panel.render(state);
   const active = state.storeys.find((s) => s.id === state.active_storey_id);
-  viewports.setActiveStorey(state.active_storey_id, active ? active.name : "");
+  viewports.setActiveStorey(state.active_storey_id, active ? active.name : "", active ? active.elevation : 0);
 }
 
 async function dispatch(cmd, args = {}) {

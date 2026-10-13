@@ -10,10 +10,12 @@ import numpy as np
 import ifcopenshell.api.aggregate
 import ifcopenshell.api.context
 import ifcopenshell.api.geometry
+import ifcopenshell.api.material
 import ifcopenshell.api.project
 import ifcopenshell.api.pset
 import ifcopenshell.api.root
 import ifcopenshell.api.spatial
+import ifcopenshell.api.type
 import ifcopenshell.api.unit
 
 
@@ -72,6 +74,63 @@ def _wall(f, body, storey, z, p1=(0.0, 0.0), p2=(5.0, 0.0)):
     return wall
 
 
+def _layer_set(f, name, layers):
+    """layers: [(nombre del material, espesor)]."""
+    layer_set = ifcopenshell.api.material.add_material_set(f, name=name, set_type="IfcMaterialLayerSet")
+    for material_name, thickness in layers:
+        material = next((m for m in f.by_type("IfcMaterial") if m.Name == material_name), None) \
+            or ifcopenshell.api.material.add_material(f, name=material_name)
+        layer = ifcopenshell.api.material.add_layer(f, layer_set=layer_set, material=material)
+        ifcopenshell.api.material.edit_layer(f, layer=layer, attributes={"LayerThickness": thickness})
+    return layer_set
+
+
+def _other_program_walls():
+    """Muros como los haría otro programa (función 002, T008): uno con capas en sentido POSITIVE, uno sin capas y
+    uno con un recorte inclinado."""
+    f, site, body = _base(project_name="Muros de otro programa")
+    plan = ifcopenshell.api.context.add_context(f, context_type="Plan")
+    axis = ifcopenshell.api.context.add_context(f, context_type="Plan", context_identifier="Axis",
+                                                target_view="GRAPH_VIEW", parent=plan)
+    edificio = _building(f, site, "Edificio")
+    storey = _storey(f, edificio, "Planta Baja", 0.0, height=3.0)
+
+    # Con capas: tipo de 2 capas, usage POSITIVE con desplazamiento 0 (la que crea assign_type), regenerado.
+    wall_type = ifcopenshell.api.root.create_entity(f, ifc_class="IfcWallType", name="Ladrillo revocado",
+                                                    predefined_type="STANDARD")
+    ifcopenshell.api.material.assign_material(f, products=[wall_type], type="IfcMaterialLayerSet",
+                                              material=_layer_set(f, "Ladrillo revocado",
+                                                                  [("Ladrillo", 0.15), ("Revoque", 0.02)]))
+    layered = ifcopenshell.api.root.create_entity(f, ifc_class="IfcWall", name="Muro con capas")
+    ifcopenshell.api.spatial.assign_container(f, products=[layered], relating_structure=storey)
+    ifcopenshell.api.type.assign_type(f, related_objects=[layered], relating_type=wall_type)
+    rep = ifcopenshell.api.geometry.create_2pt_wall(f, element=layered, context=body, p1=(0.0, 0.0), p2=(5.0, 0.0),
+                                                    elevation=0.0, height=3.0, thickness=0.17)
+    ifcopenshell.api.geometry.assign_representation(f, product=layered, representation=rep)
+    rep = ifcopenshell.api.geometry.add_axis_representation(f, context=axis, axis=[(0.0, 0.0), (5.0, 0.0)])
+    ifcopenshell.api.geometry.assign_representation(f, product=layered, representation=rep)
+    ifcopenshell.api.geometry.regenerate_wall_representation(f, wall=layered, length=5.0, height=3.0)
+
+    # Sin capas: solo el cuerpo.
+    unlayered = _wall(f, body, storey, 0.0, p1=(0.0, 3.0), p2=(5.0, 3.0))
+    unlayered.Name = "Muro sin capas"
+
+    # Con recorte: usage y eje, pero el cuerpo es un IfcBooleanClippingResult.
+    clipped = ifcopenshell.api.root.create_entity(f, ifc_class="IfcWall", name="Muro con recorte")
+    ifcopenshell.api.spatial.assign_container(f, products=[clipped], relating_structure=storey)
+    ifcopenshell.api.material.assign_material(f, products=[clipped], type="IfcMaterialLayerSetUsage",
+                                              material=_layer_set(f, "Básica", [("Hormigón", 0.2)]))
+    ifcopenshell.api.geometry.edit_object_placement(f, product=clipped, matrix=np.array(
+        [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 6.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]))
+    rep = ifcopenshell.api.geometry.add_wall_representation(
+        f, context=body, length=5.0, height=3.0, thickness=0.2,
+        clippings=[{"location": (2.5, 0.0, 2.0), "normal": (0.0, 0.0, 1.0)}])
+    ifcopenshell.api.geometry.assign_representation(f, product=clipped, representation=rep)
+    rep = ifcopenshell.api.geometry.add_axis_representation(f, context=axis, axis=[(0.0, 0.0), (5.0, 0.0)])
+    ifcopenshell.api.geometry.assign_representation(f, product=clipped, representation=rep)
+    return f
+
+
 def write_all(folder):
     """Escribe todos los IFC de prueba en la carpeta y devuelve {nombre: ruta}."""
     os.makedirs(folder, exist_ok=True)
@@ -117,6 +176,8 @@ def write_all(folder):
         if name == "Planta Baja":
             _proxy(f, storey, "Puerta", ifc_class="IfcDoor")
     save("con_elementos", f)
+
+    save("muros_otro_programa", _other_program_walls())
 
     paths["danado"] = os.path.join(folder, "danado.ifc")
     with open(paths["danado"], "w", encoding="utf-8") as archivo:

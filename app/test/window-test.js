@@ -7,6 +7,7 @@ const NAVIGATOR_LIMIT_MS = 200; // SC-004
 const EXPECTED_MENUS = [
   { label: "Archivo", items: ["Nuevo proyecto", "Abrir IFC…", "Guardar IFC", "Guardar IFC como…", "Salir"] },
   { label: "Edición", items: ["Deshacer", "Rehacer"] },
+  { label: "Opciones", items: ["Estructuras compuestas…"] },
   { label: "Ayuda", items: ["Acerca de BIM Simple"] },
 ];
 
@@ -65,7 +66,7 @@ async function environment(t) {
   t.step(S, `Motor listo en menos de 10 s (SC-007): ${t.app.ready.ready_ms} ms`, t.app.ready.ready_ms < 10000);
   t.step(S, "IfcOpenShell 0.9.0 en el motor", t.app.ready.ifcopenshell === "0.9.0", t.app.ready.ifcopenshell);
   const menus = await bim.test.menuLabels();
-  t.step(S, "Menús Archivo, Edición y Ayuda con sus textos (FR-003)", JSON.stringify(menus) === JSON.stringify(EXPECTED_MENUS), menus);
+  t.step(S, "Menús Archivo, Edición, Opciones y Ayuda con sus textos (FR-003, FR-030)", JSON.stringify(menus) === JSON.stringify(EXPECTED_MENUS), menus);
   t.step(S, "Título sin proyecto: «BIM Simple»", (await bim.test.windowTitle()) === "BIM Simple");
   t.step(S, "Arranca sin proyecto (FR-006)", $("project").textContent === "No hay ningún proyecto abierto" && !t.app.getState().has_project);
   t.step(S, "Vistas vacías al arrancar (FR-006)", t.app.meshes.size === 0);

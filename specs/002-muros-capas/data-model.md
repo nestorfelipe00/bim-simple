@@ -50,7 +50,7 @@ Entidad `IfcWall` contenida en un `IfcBuildingStorey`.
 | Clase | Regla de research R10 | — | `regenerable`, `custom_ends` o `locked`. |
 | Nombre | `Name` | "Muro"; las capas separadas, «nombre — material» | — |
 
-**Al crear**: la base es la cota del piso (Z local 0) y la altura viene del Info Box. Por defecto es la altura del
+**Al crear**: la base es la cota del piso (`create_2pt_wall` recibe la cota absoluta del piso; research R4) y la altura viene del Info Box. Por defecto es la altura del
 piso, pero queda como un número fijo.
 
 **Reglas de cambio**. Cada fila es **una** orden y **una** transacción:

@@ -59,6 +59,10 @@ function buildMenu() {
       ],
     },
     {
+      label: "Opciones", // función 002 (FR-015, FR-030)
+      submenu: [{ label: "Estructuras compuestas…", enabled: !!state.has_project, click: sendMenu("structures") }],
+    },
+    {
       label: "Ayuda",
       submenu: [{ label: "Acerca de BIM Simple", click: () => showAbout() }],
     },

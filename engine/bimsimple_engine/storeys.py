@@ -209,6 +209,7 @@ def edit_storey(project, id, name=None, elevation=None, height=None):
         return sorted(changed)
 
     changed = project.transaction(apply)
+    project.discard_index()  # los muros de los pisos movidos cambiaron de lugar (research R5)
     return {"state": project.state(), "changed_ids": changed}
 
 
@@ -242,6 +243,7 @@ def delete_storey(project, id):
             set_gross_height(project, rows[i - 1]["entity"], rows[i + 1]["elevation"] - rows[i - 1]["elevation"])
 
     project.transaction(apply)
+    project.discard_index()
     if project.active_storey_id == id:
         project.active_storey_id = rows[i - 1]["id"] if i > 0 else rows[i + 1]["id"]
     return {"state": project.state(), "deleted_ids": deleted}

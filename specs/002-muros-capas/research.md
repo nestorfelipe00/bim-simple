@@ -101,6 +101,9 @@ separar y cambiar su altura, pero no su estructura: no se sabe qué línea mante
 5. `geometry.create_2pt_wall(file, element, context, p1, p2, elevation, height, thickness)`
    (`create_2pt_wall.py:27-37`). **Devuelve la representación sin asignarla** (`88`), así que después va
    `geometry.assign_representation`.
+   - `elevation` es la **cota absoluta** del piso: la matriz que arma (`77-87`) es del mundo, y
+     `edit_object_placement` la pasa a relativa al contenedor (`edit_object_placement.py:175-194`). Con 0, un muro
+     del Piso 1 quedaría en la cota 0.
 6. Eje: `geometry.add_axis_representation(file, context=Plan/Axis, axis=[(0,0),(L,0)])` (`add_axis_representation.py:26-28`).
    - Tiene que ser el contexto **Plan/Axis/GRAPH_VIEW**, porque `util.representation.get_reference_line` solo lee
      ese (`util/representation.py:499`).

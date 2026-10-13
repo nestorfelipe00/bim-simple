@@ -13,9 +13,37 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; font: 13px "Segoe UI", system-ui, sans-serif; color: var(--texto); background: var(--fondo); }
-body { display: flex; overflow: hidden; }
+body { display: flex; flex-direction: column; overflow: hidden; }
+#workspace { flex: 1; min-height: 0; display: flex; }
+
+/* Info Box (función 002, contracts/ui.md) */
+#infobox { flex: none; min-height: 44px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 6px 10px; background: var(--panel); border-bottom: 1px solid var(--borde); }
+#infobox.disabled { opacity: 0.5; pointer-events: none; }
+#infobox label { display: inline-flex; align-items: center; gap: 4px; }
+#infobox input { width: 64px; font: inherit; padding: 3px 5px; border: 1px solid var(--borde); border-radius: 4px; text-align: right; }
+#infobox select { font: inherit; padding: 2px 4px; border: 1px solid var(--borde); border-radius: 4px; max-width: 190px; }
+#infobox input:disabled, #infobox select:disabled { background: #f2f1ee; color: var(--tenue); }
+#infobox button { padding: 3px 8px; }
+#ib-icon { width: 24px; height: 24px; }
+#ib-title { font-weight: 600; }
+#ib-empty, .ib-label { color: var(--tenue); }
+#ib-fields { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.segmented { display: inline-flex; }
+.segmented button { border-radius: 0; margin-left: -1px; }
+.segmented button:first-child { border-radius: 4px 0 0 4px; margin-left: 0; }
+.segmented button:last-child { border-radius: 0 4px 4px 0; }
+.segmented button.on { background: var(--activo); border-color: var(--acento); color: var(--acento); position: relative; }
+#ib-notice { color: var(--aviso); font-size: 12px; }
+
+/* Caja de herramientas (función 002) */
+#toolbox { flex: none; width: 44px; display: flex; flex-direction: column; gap: 4px; padding: 6px 4px; background: var(--panel); border-right: 1px solid var(--borde); }
+#toolbox.disabled { opacity: 0.5; pointer-events: none; }
+#toolbox button { width: 36px; height: 36px; padding: 5px; display: flex; align-items: center; justify-content: center; }
+#toolbox button.active { background: var(--activo); border-color: var(--acento); }
+#toolbox img { width: 24px; height: 24px; pointer-events: none; }
 
 #views { position: relative; flex: 1; min-width: 0; }
+#draw-label { position: absolute; padding: 2px 6px; background: rgba(255, 255, 255, 0.92); border: 1px solid var(--borde); border-radius: 3px; font-size: 12px; pointer-events: none; white-space: nowrap; }
 #canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .view { position: absolute; top: 0; bottom: 0; width: 50%; }
 #plan-view { left: 0; border-right: 1px solid var(--borde); }
@@ -51,3 +79,21 @@ dialog label { display: flex; justify-content: space-between; align-items: cente
 dialog input { width: 150px; font: inherit; padding: 4px 6px; border: 1px solid var(--borde); border-radius: 4px; }
 .dialog-buttons { display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px; }
 .error { color: #b3261e; font-size: 12px; }
+
+/* Diálogo "Estructuras compuestas" (función 002) */
+#structures-dialog { width: 760px; }
+#structures-dialog h2 { margin-top: 0; }
+#structures-dialog h3 { font-size: 12px; color: var(--tenue); margin: 10px 0 4px; }
+.sd-columns { display: grid; grid-template-columns: 300px 1fr; gap: 16px; }
+#sd-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--borde); border-radius: 4px; height: 190px; overflow-y: auto; }
+#sd-list li { display: flex; justify-content: space-between; padding: 5px 8px; cursor: default; user-select: none; }
+#sd-list li.selected { background: var(--activo); }
+.sd-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.sd-material { display: flex; gap: 6px; align-items: center; }
+.sd-material input[type="text"] { width: 140px; }
+.sd-material input[type="color"] { width: 36px; height: 28px; padding: 1px; }
+#structures-dialog .sd-name input { width: 260px; }
+#sd-layers select { font: inherit; width: 100%; }
+#sd-layers input { width: 80px; text-align: right; }
+#sd-layers tr.selected td { background: var(--activo); }
+#sd-total { font-weight: 600; }

@@ -16,9 +16,36 @@
   </script>
 </head>
 <body>
+  <header id="infobox" class="disabled">
+    <img id="ib-icon" src="icons/arrow.svg" alt="">
+    <span id="ib-title"></span>
+    <span id="ib-empty" hidden>Nada seleccionado. Clic en un muro para seleccionarlo; Shift + clic para agregar o quitar.</span>
+    <span id="ib-fields">
+      <label>Estructura <select id="ib-structure"></select></label>
+      <button id="ib-structures" title="Estructuras compuestas…">…</button>
+      <label>Material <select id="ib-material"></select></label>
+      <label>Espesor (m) <input id="ib-thickness" type="text" inputmode="decimal" autocomplete="off"></label>
+      <label>Altura (m) <input id="ib-height" type="text" inputmode="decimal" autocomplete="off"></label>
+      <span class="ib-label">Línea de referencia</span>
+      <span id="ib-reference" class="segmented">
+        <button data-reference="exterior">Exterior</button><button data-reference="center">Centro</button><button data-reference="interior">Interior</button>
+      </span>
+      <span id="ib-reference-text" hidden></span>
+    </span>
+    <button id="ib-split" hidden>Separar en capas</button>
+    <button id="ib-delete" hidden>Borrar</button>
+    <span id="ib-notice" hidden></span>
+  </header>
+
+  <div id="workspace">
+  <nav id="toolbox" class="disabled">
+    <button data-tool="arrow" title="Flecha (seleccionar)"><img src="icons/arrow.svg" alt="Flecha"></button>
+    <button data-tool="wall" title="Muro"><img src="icons/wall.svg" alt="Muro"></button>
+  </nav>
+
   <main id="views">
     <canvas id="canvas"></canvas>
-    <div id="plan-view" class="view"><span class="view-label" id="plan-label">Planta</span></div>
+    <div id="plan-view" class="view"><span class="view-label" id="plan-label">Planta</span><span id="draw-label" hidden></span></div>
     <div id="view-3d" class="view"><span class="view-label">Vista 3D</span></div>
   </main>
 
@@ -49,6 +76,7 @@
 
     <div id="messages" role="status"></div>
   </aside>
+  </div>
 
   <dialog id="edit-dialog">
     <form method="dialog" id="edit-form">
@@ -60,6 +88,50 @@
       <div class="dialog-buttons">
         <button value="cancel" id="edit-cancel" formnovalidate>Cancelar</button>
         <button value="ok" id="edit-ok">Aceptar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="structures-dialog">
+    <form method="dialog" id="sd-form">
+      <h2>Estructuras compuestas</h2>
+      <div class="sd-columns">
+        <section>
+          <h3>Estructuras</h3>
+          <ul id="sd-list"></ul>
+          <div class="sd-buttons">
+            <button type="button" id="sd-new">Nueva</button>
+            <button type="button" id="sd-duplicate">Duplicar</button>
+            <button type="button" id="sd-rename">Renombrar</button>
+            <button type="button" id="sd-delete">Borrar</button>
+          </div>
+          <h3>Materiales</h3>
+          <div class="sd-material">
+            <input id="sd-material-name" type="text" placeholder="Nombre del material" autocomplete="off">
+            <input id="sd-material-color" type="color" value="#a0a0a0">
+            <button type="button" id="sd-material-add">Nuevo material…</button>
+          </div>
+        </section>
+        <section>
+          <label class="sd-name">Nombre <input id="sd-name" type="text" autocomplete="off"></label>
+          <h3 id="sd-layers-title">Capas (de exterior a interior)</h3>
+          <table>
+            <thead><tr><th>#</th><th>Material</th><th class="num">Espesor (m)</th></tr></thead>
+            <tbody id="sd-layers"></tbody>
+          </table>
+          <div class="sd-buttons">
+            <button type="button" id="sd-add-layer">Agregar capa</button>
+            <button type="button" id="sd-remove-layer">Quitar capa</button>
+            <button type="button" id="sd-up">Subir</button>
+            <button type="button" id="sd-down">Bajar</button>
+          </div>
+          <p id="sd-total"></p>
+        </section>
+      </div>
+      <p id="sd-error" class="error" hidden></p>
+      <div class="dialog-buttons">
+        <button value="cancel" id="sd-cancel" formnovalidate>Cancelar</button>
+        <button value="ok" id="sd-ok">Aceptar</button>
       </div>
     </form>
   </dialog>
