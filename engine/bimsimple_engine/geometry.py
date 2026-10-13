@@ -41,12 +41,12 @@ def _mesh(element, vertices, faces, groups=(), wall=None):
     }
 
 
-def layered_mesh(project, wall, info):
+def layered_mesh(project, wall, info, analysis):
     """Malla de un muro editable con un grupo por capa; None si alguna capa no es un polígono convexo."""
-    polygons = layers.layer_polygons(wall, project.unit_scale())
+    polygons = analysis.polygons
     if not polygons or not all(layers.is_convex(poly) for _, poly, _, _ in polygons):
         return None
-    matrix = walls.placement_matrix(project, wall)
+    matrix = analysis.matrix
     all_vertices, all_faces, groups = [], [], []
     vertex_offset = index_offset = 0
     for layer, polygon, z0, depth in polygons:
@@ -72,9 +72,10 @@ def meshes(project, ids=None):
     result, failures, pending, wall_data = [], [], [], {}
     for element in elements:
         if element.is_a("IfcWall"):
-            info = walls.wall_info(project, element)
+            analysis = walls.analyze(project, element)
+            info = walls.wall_info(project, element, analysis)
             wall_data[element.id()] = info
-            mesh = layered_mesh(project, element, info) if info["kind"] != "locked" else None
+            mesh = layered_mesh(project, element, info, analysis) if info["kind"] != "locked" else None
             if mesh is not None:
                 result.append(mesh)
                 continue

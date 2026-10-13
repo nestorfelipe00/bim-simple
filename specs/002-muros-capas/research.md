@@ -356,6 +356,30 @@ Three.js 0.186.1 (📖 `app/node_modules/three/src`):
 **IFC de prueba nuevos** (`engine/tests/make_fixtures.py`): un muro de "otro programa" con capas en POSITIVE, uno sin
 capas y uno con booleano.
 
+## R15. Resultados medidos en la implementación (T043) ✅
+
+Con 50 recintos de "Muro exterior 30" (200 muros) en un piso (`plan002/v6_tiempos.py` y la prueba del programa):
+
+| Acción | Motor | Con su redibujo (programa) |
+|---|---|---|
+| Crear un muro | 28 ms (mediana; máx. 31 ms) | 31 ms (SC-006: < 200 ms) |
+| Mallas de un muro de 4 capas | 2,2 ms | — |
+| Mallas de los 210 muros (abrir, deshacer, rehacer) | 383 ms | — |
+| Separar un muro de 4 capas | 43 ms | — |
+| Editar una estructura que usan 209 muros | 1,8 s (regenera cada muro) | — |
+| Dibujar un recinto de 4 muros (proyecto chico) | — | 17–38 ms por muro |
+
+**Dos ajustes de rendimiento** (encontrados al medir):
+1. El estado del proyecto buscaba los pisos con `get_decomposition` del edificio, que recorre también cada muro: unos
+   50 ms con 200 muros. Ahora recorre solo la jerarquía espacial (`storeys.storey_entities`).
+2. Cada muro se analiza una vez por orden (`walls.Analysis`: ubicación, eje, cuerpo, capas, uniones y clase), y la
+   escala de unidades se calcula una vez por archivo.
+
+Con esos ajustes, crear un muro pasó de 66 a 28 ms en el motor, y las mallas de todos los muros, de 807 a 383 ms.
+
+**Pendiente** ⚠️: editar una estructura muy usada tarda 1,8 s con 209 muros. Es poco frecuente; si molesta, se
+puede regenerar solo lo que cambia de espesor.
+
 ## R14. Licencias (Principio VI) ✅
 
 - **Sin dependencias nuevas**: numpy e IfcOpenShell ya están (función 001, R10).

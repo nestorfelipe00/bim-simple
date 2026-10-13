@@ -39,7 +39,12 @@ class Project:
             return None
 
     def unit_scale(self):
-        return ifcopenshell.util.unit.calculate_unit_scale(self.file)
+        """Metros por unidad del archivo. Se calcula una vez por archivo: las unidades no cambian mientras está
+        abierto, y los muros la piden muchas veces por orden (función 002, T043)."""
+        if getattr(self, "_scale_file", None) is not self.file:
+            self._scale = ifcopenshell.util.unit.calculate_unit_scale(self.file)
+            self._scale_file = self.file
+        return self._scale
 
     def transaction(self, function):
         """Ejecuta una orden que cambia el IFC como un único paso de deshacer."""

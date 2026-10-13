@@ -26,10 +26,21 @@ def building(project):
 
 
 def storey_entities(project):
+    """Pisos del edificio, recorriendo solo la jerarquía espacial (IfcRelAggregates entre espacios). Recorrer toda
+    la descomposición pasaba también por cada muro: unos 50 ms con 200 muros (función 002, T043)."""
     work_building = building(project)
     if work_building is None:
         return []
-    return [e for e in ifcopenshell.util.element.get_decomposition(work_building) if e.is_a("IfcBuildingStorey")]
+    found, pending = [], [work_building]
+    while pending:
+        current = pending.pop()
+        for rel in current.IsDecomposedBy or ():
+            for child in rel.RelatedObjects:
+                if child.is_a("IfcSpatialStructureElement") or child.is_a("IfcSpatialElement"):
+                    if child.is_a("IfcBuildingStorey"):
+                        found.append(child)
+                    pending.append(child)
+    return found
 
 
 def elevation(project, storey):

@@ -4,10 +4,17 @@ Programa BIM de escritorio para arquitectos, con una forma de trabajo parecida a
 es un archivo **IFC** (IFC4, en metros), que es la única fuente de verdad: lo que se ve en pantalla sale del
 IFC, y el IFC guardado se abre en cualquier otro programa BIM.
 
-> **Estado**: función 001 implementada. Incluye la pantalla (planta del piso activo + vista 3D), el proyecto
-> nuevo, Abrir / Guardar / Guardar como, el navegador de pisos (agregar, editar cota y altura, borrar,
-> activar con doble clic) y Deshacer / Rehacer. Las herramientas de dibujo (muro, losa, columna) llegan en las
-> funciones siguientes.
+> **Estado**: funciones 001 y 002 implementadas.
+> - **001**: la pantalla (planta del piso activo + vista 3D), el proyecto nuevo, Abrir / Guardar / Guardar como,
+>   el navegador de pisos (agregar, editar cota y altura, borrar, activar con doble clic) y Deshacer / Rehacer.
+> - **002**: muros con capas.
+>   - Caja de herramientas (Flecha y Muro) e Info Box.
+>   - Dibujo encadenado con imán, Shift y longitud escrita; esquinas unidas en inglete.
+>   - Catálogo de estructuras compuestas (Opciones > Estructuras compuestas…).
+>   - Separar un muro en sus capas, que pasan a ser muros independientes.
+>   - Seleccionar, cambiar y borrar muros.
+>
+> Losa y columna llegan en la función 3.
 
 ## Cómo está hecho
 
@@ -56,8 +63,8 @@ Prueba del motor, sin interfaz:
 runtime/python/python.exe -m pytest engine/tests -q -p no:cacheprovider
 ```
 
-Prueba del programa, con la ventana oculta: recorre las cuatro historias como lo haría el usuario y deja
-`resultado.json` y capturas en `app/test-output/`.
+Prueba del programa, con la ventana oculta: recorre las historias de las funciones 001 y 002 como lo haría
+el usuario (clics en la planta incluidos) y deja `resultado.json` y capturas en `app/test-output/`.
 
 ```bash
 npm --prefix app test
@@ -89,12 +96,14 @@ con código 0 si todo anduvo.
 ```
 app/                  ventana e interfaz (Electron)
   src/main/           proceso principal: main.js, engine.js (motor), validator.js
-  src/renderer/       página: vistas, panel de pisos, mallas
+  src/renderer/       página: vistas, panel de pisos, mallas, caja de herramientas, Info Box,
+                      herramienta Muro, selección, diálogo de estructuras, iconos
   test/               prueba del programa con la ventana oculta
   build/              icono, textos de licencias
 engine/               motor (Python)
-  bimsimple_engine/   protocolo, proyecto, pisos, geometría
-  tests/              pruebas del motor e IFC de prueba
+  bimsimple_engine/   protocolo, proyecto, pisos, geometría, muros (walls.py), capas (layers.py),
+                      materiales y estructuras (materials.py)
+  tests/              pruebas del motor (test_engine.py, test_walls.py) e IFC de prueba
 runtime/python/       Python embebido (lo arma tools/setup-dev.ps1; no está en git)
 tools/                setup-dev.ps1, make_icon.py
 specs/                especificaciones de cada función (Spec Kit)

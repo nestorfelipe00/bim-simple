@@ -86,23 +86,56 @@ def path_connections(wall):
     return result
 
 
+class Analysis:
+    """Lo que el motor lee de un muro una sola vez por orden: ubicación, eje, cuerpo, capas, uniones y clase."""
+
+    def __init__(self, project, wall):
+        scale = project.unit_scale()
+        self.usage = layers.usage_of(wall)
+        self.solid = layers.body_solid(wall)
+        self.matrix = placement_matrix(project, wall)
+        try:
+            self.local = local_axis(project, wall)
+        except Exception:  # sin eje ni perfil que lo reemplace
+            self.local = None
+        self.connections = path_connections(wall)
+        self.polygons = None
+        self.profile = None
+        if self.usage is not None and self.solid is not None and self.usage.ForLayerSet.MaterialLayers:
+            self.profile, z0, depth = layers.profile_polygon(self.solid, scale)
+            thickness = [float(layer.LayerThickness) * scale for layer in self.usage.ForLayerSet.MaterialLayers]
+            self.strips = layers.layer_strips(self.usage, thickness, scale)
+            self.polygons = [(layer, layers.clip_strip(self.profile, y_min, y_max), z0, depth)
+                             for layer, (y_min, y_max) in zip(self.usage.ForLayerSet.MaterialLayers, self.strips)]
+        self.kind = self._kind(wall)
+
+    def _kind(self, wall):
+        """regenerable, custom_ends o locked (research R10)."""
+        if self.usage is None or axis_representation(wall) is None or self.solid is None or self.local is None:
+            return "locked"
+        if not self.polygons or any(len(poly) < 3 for _, poly, _, _ in self.polygons):
+            return "locked"
+        if self.connections:
+            return "regenerable"
+        start, end = self.local
+        if abs(start[1]) > layers.TOL or abs(end[1]) > layers.TOL or abs(start[0]) > layers.TOL:
+            return "custom_ends"
+        y_min, y_max = min(s[0] for s in self.strips), max(s[1] for s in self.strips)
+        return "regenerable" if layers.is_plain_strip(self.profile, float(end[0]), y_min, y_max) else "custom_ends"
+
+    def endpoints(self):
+        if self.local is None:
+            return None
+        return [tuple(float(v) for v in (self.matrix @ np.array([p[0], p[1], 0.0, 1.0]))[:2]) for p in self.local]
+
+
+def analyze(project, wall):
+    return Analysis(project, wall)
+
+
 def kind_of(project, wall):
     """regenerable, custom_ends o locked (research R10)."""
-    usage = layers.usage_of(wall)
-    if usage is None or axis_representation(wall) is None or layers.body_solid(wall) is None:
-        return "locked"
-    polygons = layers.layer_polygons(wall, project.unit_scale())
-    if not polygons or any(len(poly) < 3 for _, poly, _, _ in polygons):
-        return "locked"
-    if path_connections(wall):
-        return "regenerable"
-    start, end = local_axis(project, wall)
-    if abs(start[1]) > layers.TOL or abs(end[1]) > layers.TOL or abs(start[0]) > layers.TOL:
-        return "custom_ends"
-    polygon, _, _ = layers.profile_polygon(layers.body_solid(wall), project.unit_scale())
-    strips = layers.layer_strips(usage, thicknesses(project, wall), project.unit_scale())
-    y_min, y_max = min(s[0] for s in strips), max(s[1] for s in strips)
-    return "regenerable" if layers.is_plain_strip(polygon, float(end[0]), y_min, y_max) else "custom_ends"
+    return Analysis(project, wall).kind
 
 
 def height_of(project, wall):
@@ -118,16 +151,14 @@ def structure_of(wall):
     return None
 
 
-def wall_info(project, wall):
+def wall_info(project, wall, analysis=None):
     """Datos del muro para la interfaz (data-model.md §6)."""
+    a = analysis or Analysis(project, wall)
     container = ifcopenshell.util.element.get_container(wall)
-    kind = kind_of(project, wall)
-    usage = layers.usage_of(wall)
+    kind = a.kind
+    usage = a.usage
     layer_rows = materials.layers_of(project, usage.ForLayerSet) if usage is not None else []
-    try:
-        start, end = endpoints(project, wall)
-    except Exception:  # sin eje ni perfil que lo reemplace
-        start = end = None
+    start, end = a.endpoints() or (None, None)
     structure = structure_of(wall)
     return {
         "id": wall.id(),
@@ -135,7 +166,7 @@ def wall_info(project, wall):
         "start": list(start) if start else None,
         "end": list(end) if end else None,
         "reference": reference_of(project, wall),
-        "height": round(height_of(project, wall), 6),
+        "height": round(float(a.solid.Depth) * project.unit_scale(), 6) if a.solid is not None else 0.0,
         "structure_id": structure.id() if structure is not None else None,
         "layers": layer_rows,
         "thickness": round(sum(row["thickness"] for row in layer_rows), 6),
@@ -161,8 +192,11 @@ class EndpointIndex:
             cells = {}
             storey = self.project.entity(storey_id)
             for element in ifcopenshell.util.element.get_contained(storey) if storey is not None else []:
-                if is_wall(element) and kind_of(self.project, element) != "locked":
-                    for point in endpoints(self.project, element):
+                if not is_wall(element):
+                    continue
+                analysis = Analysis(self.project, element)
+                if analysis.kind != "locked":
+                    for point in analysis.endpoints():
                         cells.setdefault(self._key(point), set()).add(element.id())
             self.storeys[storey_id] = cells
         return self.storeys[storey_id]

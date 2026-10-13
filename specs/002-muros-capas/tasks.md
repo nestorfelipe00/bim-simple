@@ -628,17 +628,17 @@ reabrir: igual.
 
 ## Fase 7: Pulido y cierre
 
-- [ ] T040 Sección "Muros — rendimiento" en `app/test/window-test.js` (SC-006):
+- [X] T040 Sección "Muros — rendimiento" en `app/test/window-test.js` (SC-006):
   - con 50 recintos creados por `dispatch("create_wall", …)` en un piso nuevo, un muro más con su redibujo tarda
     < 200 ms;
   - registrar el tiempo.
-- [ ] T041 [P] Agregar a `PRUEBA_MANUAL.md` la sección "7. Muros con capas", con la parte B de
+- [X] T041 [P] Agregar a `PRUEBA_MANUAL.md` la sección "7. Muros con capas", con la parte B de
   [quickstart.md](quickstart.md) (B1-B6) en lenguaje simple y con casillas.
-- [ ] T042 [P] Actualizar `README.md`:
+- [X] T042 [P] Actualizar `README.md`:
   - el estado (funciones 001 y 002);
   - los módulos nuevos en "Estructura";
   - la línea de muros en "Qué es".
-- [ ] T043 Anotar en `research.md` los tiempos medidos por las pruebas (crear, separar y redibujar), correr las dos
+- [X] T043 Anotar en `research.md` los tiempos medidos por las pruebas (crear, separar y redibujar), correr las dos
   pruebas completas y hacer el commit "docs: cierre de la función 002 (pruebas y documentos)".
 - [ ] T044 ⛔ PERMISO: pedir permiso para abrir BIM Simple con ventana (`npm --prefix app start`). El usuario hace la
   parte B de [quickstart.md](quickstart.md):

@@ -579,3 +579,20 @@ addSection(async function muros4(t) {
   t.app.viewports.fit({ animate: false });
   await t.capture("m4");
 });
+
+addSection(async function murosRendimiento(t) {
+  const S = "Muros — rendimiento";
+  await t.app.handleAction("new");
+  const values = { structure_id: null, material_id: t.app.getState().materials.find((m) => m.name === "Hormigón").id, thickness: 0.2, height: 3, reference: "exterior" };
+  for (let k = 0; k < 50; k++) {
+    const x0 = (k % 10) * 7;
+    const y0 = Math.floor(k / 10) * 5;
+    const ring = [[x0, y0 + 4], [x0 + 6, y0 + 4], [x0 + 6, y0], [x0, y0]];
+    for (let i = 0; i < 4; i++) await t.app.dispatch("create_wall", { start: ring[i], end: ring[(i + 1) % 4], ...values });
+  }
+  const pb = t.app.getState().active_storey_id;
+  const count = t.app.meshes.walls(pb).length;
+  const response = await t.app.dispatch("create_wall", { start: [100, 0], end: [100, 4], ...values });
+  t.step(S, `Con ${count} muros en el piso, un muro más con su redibujo: ${response.total_ms} ms < ${WALL_LIMIT_MS} ms (SC-006)`,
+    count === 200 && response.ok && response.total_ms < WALL_LIMIT_MS, response.total_ms);
+});
