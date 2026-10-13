@@ -401,3 +401,89 @@ addSection(async function muros1(t) {
   t.app.viewports.fit({ animate: false });
   await t.capture("m1");
 });
+
+// Elige una opción de una lista del Info Box por su texto, como el usuario.
+function choose(id, text) {
+  const select = document.getElementById(id);
+  const option = [...select.options].find((o) => o.textContent === text);
+  if (!option) return false;
+  select.value = option.value;
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+  return true;
+}
+
+function setInput(element, value) {
+  element.value = value;
+  element.dispatchEvent(new Event("input", { bubbles: true }));
+  element.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function listItem(name) {
+  return [...document.querySelectorAll("#sd-list li")].find((li) => li.firstChild.textContent === name);
+}
+
+addSection(async function muros2(t) {
+  const S = "Muros 2 — compuestos";
+  const piso1 = await threeStoreys(t);
+  t.app.setTool("wall");
+  choose("ib-structure", "Muro exterior 30");
+  t.step(S, "«Muro exterior 30» en el Info Box: espesor 0,30 desactivado y material «—» (FR-003)",
+    document.getElementById("ib-thickness").value === "0,30" && document.getElementById("ib-thickness").disabled &&
+    selectedText("ib-material") === "—" && document.getElementById("ib-material").disabled);
+  for (const [x, y] of [[0, 0], [5, 0], [5, 4]]) await click(t, x, y);
+  await press(t, "Escape");
+  const drawn = t.app.meshes.walls(piso1);
+  const state = t.app.getState();
+  const color = (name) => state.materials.find((m) => m.name === name).color;
+  const expected = ["Revoque", "Ladrillo", "Aislación", "Revoque"].map((n) => color(n).slice(1));
+  const colorsOk = drawn.every((w) => {
+    const mesh = t.app.meshes.byId.get(w.id);
+    return mesh.geometry.groups.length === 4 && mesh.userData.material.map((m) => m.color.getHexString()).join() === expected.join();
+  });
+  t.step(S, "2 muros compuestos: 4 grupos con los colores del catálogo (FR-017)", drawn.length === 2 && colorsOk, drawn.map((w) => w.layers.length));
+
+  // Opciones > Estructuras compuestas…: crear "Muro de prueba" con 3 capas.
+  let pending = t.app.handleAction("structures");
+  await sleep(50);
+  const opened = document.getElementById("structures-dialog").open;
+  document.getElementById("sd-new").click();
+  setInput(document.getElementById("sd-name"), "Muro de prueba");
+  document.getElementById("sd-add-layer").click();
+  document.getElementById("sd-add-layer").click();
+  const inputs = () => [...document.querySelectorAll("#sd-layers input")];
+  setInput(inputs()[0], "0,15");
+  t.step(S, "El diálogo muestra el espesor total: «Espesor total: 0,35 m»", opened && document.getElementById("sd-total").textContent === "Espesor total: 0,35 m", document.getElementById("sd-total").textContent);
+  document.getElementById("sd-ok").click();
+  let response = await pending;
+  t.step(S, "Aceptar crea «Muro de prueba» y aparece en la lista del Info Box (FR-015)",
+    response && response.ok && [...document.getElementById("ib-structure").options].some((o) => o.textContent === "Muro de prueba"),
+    response && response.error);
+
+  // Renombrar a un nombre que ya existe: error exacto y el diálogo sigue abierto.
+  pending = t.app.handleAction("structures");
+  await sleep(50);
+  listItem("Muro de prueba").click();
+  setInput(document.getElementById("sd-name"), "Muro exterior 30");
+  document.getElementById("sd-ok").click();
+  await waitFor(() => !document.getElementById("sd-error").hidden, 3000, 20);
+  t.step(S, "Nombre repetido: «Ya existe una estructura llamada «Muro exterior 30».» y el diálogo sigue abierto",
+    document.getElementById("sd-error").textContent === "Ya existe una estructura llamada «Muro exterior 30»." && document.getElementById("structures-dialog").open,
+    document.getElementById("sd-error").textContent);
+  document.getElementById("sd-cancel").click();
+  await pending;
+
+  // Editar la Aislación de "Muro exterior 30" a 0,08: los muros dibujados cambian (FR-015).
+  pending = t.app.handleAction("structures");
+  await sleep(50);
+  listItem("Muro exterior 30").click();
+  setInput(inputs()[2], "0,08");
+  document.getElementById("sd-ok").click();
+  response = await pending;
+  const thick = () => t.app.meshes.walls(piso1).map((w) => w.thickness);
+  t.step(S, "Aislación 0,08: los 2 muros que usan «Muro exterior 30» pasan a 0,33 (FR-015)",
+    response && response.ok && thick().every((v) => near(v, 0.33)), thick());
+  await t.app.handleAction("undo");
+  t.step(S, "Ctrl+Z: los muros vuelven a 0,30 (un solo paso de deshacer)", thick().every((v) => near(v, 0.3)), thick());
+  t.app.viewports.fit({ animate: false });
+  await t.capture("m2");
+});

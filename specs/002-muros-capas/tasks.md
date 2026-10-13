@@ -389,7 +389,7 @@ capas en orden; editar la estructura cambia los muros que la usan.
 
 ### Pruebas de la Historia 2
 
-- [ ] T023 [US2] En `engine/tests/test_walls.py`:
+- [X] T023 [US2] En `engine/tests/test_walls.py`:
   - `test_muro_compuesto`:
     - recinto con "Muro exterior 30" → cada muro tiene su propia usage y todas apuntan al mismo conjunto;
     - la malla tiene 4 grupos con los `material_id` de Revoque, Ladrillo, Aislación y Revoque;
@@ -423,7 +423,7 @@ capas en orden; editar la estructura cambia los muros que la usan.
 
 ### Implementación de la Historia 2
 
-- [ ] T024 [US2] `apply_structures` en `engine/bimsimple_engine/materials.py` y `commands.py`
+- [X] T024 [US2] `apply_structures` en `engine/bimsimple_engine/materials.py` y `commands.py`
   ([core_api.md](contracts/core_api.md) "apply_structures"; research R11).
   1. **Validar todo antes de cambiar nada**:
      - nombres no vacíos y únicos sin distinguir mayúsculas, contra el catálogo resultante;
@@ -442,7 +442,7 @@ capas en orden; editar la estructura cambia los muros que la usan.
      5. por cada muro de una estructura cambiada: `edit_layer_usage` con el desplazamiento de su referencia y el
         espesor nuevo (research R3), y `regenerate_wall_representation` de él y sus unidos.
   3. Devuelve `{state, changed_ids}`.
-- [ ] T025 [US2] Crear `app/src/renderer/structures-dialog.js` ([ui.md](contracts/ui.md) "Diálogo"):
+- [X] T025 [US2] Crear `app/src/renderer/structures-dialog.js` ([ui.md](contracts/ui.md) "Diálogo"):
   - trabaja sobre una copia de `state.structures` y `state.materials`;
   - Nueva ("Estructura N" con Hormigón 0,20), Duplicar («nombre» (copia)), Renombrar, Borrar (con el aviso de
     estructura en uso, calculado con `walls`);
@@ -453,12 +453,12 @@ capas en orden; editar la estructura cambia los muros que la usan.
   - Aceptar arma **un** `apply_structures` con lo creado, cambiado y borrado. Si el motor responde con error, el
     diálogo queda abierto con ese texto;
   - Cancelar o Esc cierran sin cambios.
-- [ ] T026 [US2] En `app/src/renderer/app.js` y `infobox.js`:
+- [X] T026 [US2] En `app/src/renderer/app.js` y `infobox.js`:
   - la acción de menú `structures` y el botón "…" abren el diálogo y, al aceptar, `dispatch("apply_structures",
     cambios)`;
   - en el Info Box, con una estructura compuesta: Material "—" desactivado y Espesor = suma de capas, desactivado;
   - si la estructura elegida deja de existir, vuelve a "Básica".
-- [ ] T027 [US2] Sección "Muros 2 — compuestos" en `app/test/window-test.js`:
+- [X] T027 [US2] Sección "Muros 2 — compuestos" en `app/test/window-test.js`:
   - elegir "Muro exterior 30" → Espesor "0,30" desactivado;
   - dibujar 2 muros encadenados → la malla tiene 4 grupos con los colores del catálogo;
   - **Opciones > Estructuras compuestas…** (vía `handleAction("structures")`):
@@ -467,7 +467,7 @@ capas en orden; editar la estructura cambia los muros que la usan.
   - editar la Aislación de "Muro exterior 30" a 0,08 → los muros dibujados pasan a 0,33;
   - Ctrl+Z vuelve a 0,30;
   - captura `m2`.
-- [ ] T028 [US2] Correr las dos pruebas y hacer el commit "feat: Historia 2 de la función 002, muros compuestos".
+- [X] T028 [US2] Correr las dos pruebas y hacer el commit "feat: Historia 2 de la función 002, muros compuestos".
 
 ---
 

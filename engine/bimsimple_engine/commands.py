@@ -1,6 +1,6 @@
 """Tabla de órdenes del protocolo (contracts/core_api.md). Cada orden recibe el proyecto y sus argumentos."""
 
-from . import EngineError, geometry, project as project_commands, storeys, walls
+from . import EngineError, geometry, materials, project as project_commands, storeys, walls
 
 
 def _state(project, **_):
@@ -29,6 +29,7 @@ COMMANDS = {
     "activate_storey": lambda project, id: storeys.activate_storey(project, id),
     # función 002 (specs/002-muros-capas/contracts/core_api.md)
     "create_wall": lambda project, **args: walls.create_wall(project, **args),
+    "apply_structures": lambda project, **args: materials.apply_structures(project, **args),
 }
 
 

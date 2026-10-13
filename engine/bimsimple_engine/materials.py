@@ -6,6 +6,7 @@ un IfcSurfaceStyle asignado en el contexto Body.
 
 import re
 
+import ifcopenshell.api.attribute
 import ifcopenshell.api.material
 import ifcopenshell.api.root
 import ifcopenshell.api.style
@@ -149,6 +150,121 @@ def create_structure(project, name, layers):
         ifcopenshell.api.material.edit_layer(f, layer=layer, attributes={"LayerThickness": thickness / scale})
     ifcopenshell.api.material.assign_material(f, products=[wall_type], type="IfcMaterialLayerSet", material=layer_set)
     return wall_type
+
+
+def sync_layers(project, layer_set, layers):
+    """Deja el conjunto con exactamente estas capas [(IfcMaterial, espesor en m)], sin quedar nunca con 0 capas."""
+    f = project.file
+    scale = project.unit_scale()
+    while len(layer_set.MaterialLayers) < len(layers):
+        ifcopenshell.api.material.add_layer(f, layer_set=layer_set, material=layers[0][0])
+    while len(layer_set.MaterialLayers) > len(layers):
+        ifcopenshell.api.material.remove_layer(f, layer=layer_set.MaterialLayers[-1])
+    for layer, (mat, thickness) in zip(layer_set.MaterialLayers, layers):
+        ifcopenshell.api.material.edit_layer(f, layer=layer, attributes={"LayerThickness": thickness / scale},
+                                             material=mat)
+
+
+def apply_structures(project, materials=None, structures=None, deleted=None):
+    """Todos los cambios del diálogo "Estructuras compuestas" en una transacción (contracts/core_api.md; R11).
+    Primero se comprueban todas las reglas; si alguna no se cumple, no cambia nada."""
+    from . import walls  # walls usa este módulo
+
+    project.require_project()
+    new_materials, changes, deleted = materials or [], structures or [], deleted or []
+    taken = []
+    for row in new_materials:
+        check_material_name(project, row.get("name", ""), taken)
+        check_color(row.get("color"))
+        taken.append(row["name"].strip())
+    refs = {row["ref"] for row in new_materials}
+    existing = {t.id(): t for t in structure_types(project)}
+
+    def material_ref(value):
+        if isinstance(value, str) and value in refs:
+            return value
+        material(project, value)  # "El material elegido ya no existe."
+        return value
+
+    final_names = {key: t.Name or "" for key, t in existing.items() if key not in deleted}
+    for i, row in enumerate(changes):
+        if row.get("id") is not None and row["id"] not in existing:
+            raise EngineError("La estructura elegida ya no existe.")
+        if row.get("copy_of") is not None and row["copy_of"] not in existing:
+            raise EngineError("La estructura elegida ya no existe.")
+        name = (row.get("name") or "").strip()
+        if not name:
+            raise EngineError("El nombre no puede quedar vacío.")
+        final_names[row["id"] if row.get("id") is not None else f"new-{i}"] = name
+    for i, row in enumerate(changes):
+        key = row["id"] if row.get("id") is not None else f"new-{i}"
+        name = final_names[key]
+        if any(other.casefold() == name.casefold() for k, other in final_names.items() if k != key):
+            raise EngineError(f"Ya existe una estructura llamada «{name}».")
+        if not row.get("layers"):
+            raise EngineError("La estructura tiene que tener al menos una capa.")
+        for n, layer in enumerate(row["layers"], start=1):
+            thickness = layer.get("thickness")
+            if not isinstance(thickness, (int, float)) or thickness <= 0:
+                raise EngineError(f"La capa {n} de «{name}» tiene que tener un espesor mayor que 0.")
+            material_ref(layer.get("material"))
+    for structure_id in deleted:
+        if structure_id not in existing:
+            raise EngineError("La estructura elegida ya no existe.")
+        count = len(ifcopenshell.util.element.get_types(existing[structure_id]))
+        if count:
+            uses = "la usa 1 muro" if count == 1 else f"la usan {count} muros"
+            raise EngineError(f"La estructura «{existing[structure_id].Name}» {uses}; no se puede borrar.")
+
+    def apply():
+        f = project.file
+        created = {row["ref"]: add_material(project, row["name"], row["color"]) for row in new_materials}
+        resolve = lambda value: created[value] if isinstance(value, str) else project.entity(value)
+        affected = []  # (muro, línea de referencia antes del cambio)
+        for row in changes:
+            layers = [(resolve(layer["material"]), float(layer["thickness"])) for layer in row["layers"]]
+            name = row["name"].strip()
+            if row.get("id") is None:
+                if row.get("copy_of") is not None:
+                    layer_set = ifcopenshell.api.material.copy_material(f, material=layer_set_of(existing[row["copy_of"]]))
+                    wall_type = ifcopenshell.api.root.create_entity(f, ifc_class="IfcWallType", name=name,
+                                                                    predefined_type="STANDARD")
+                    ifcopenshell.api.material.assign_material(f, products=[wall_type], type="IfcMaterialLayerSet",
+                                                              material=layer_set)
+                    ifcopenshell.api.attribute.edit_attributes(f, product=layer_set, attributes={"LayerSetName": name})
+                    sync_layers(project, layer_set, layers)
+                else:
+                    create_structure(project, name, layers)
+                continue
+            wall_type = existing[row["id"]]
+            layer_set = layer_set_of(wall_type)
+            if name != (wall_type.Name or ""):
+                ifcopenshell.api.attribute.edit_attributes(f, product=wall_type, attributes={"Name": name})
+                ifcopenshell.api.attribute.edit_attributes(f, product=layer_set, attributes={"LayerSetName": name})
+            before = layers_of(project, layer_set)
+            wanted = [{"material_id": m.id(), "thickness": round(t, 6)} for m, t in layers]
+            if before != wanted:
+                for wall in ifcopenshell.util.element.get_types(wall_type):
+                    affected.append((wall, walls.reference_of(project, wall), walls.kind_of(project, wall)))
+                sync_layers(project, layer_set, layers)
+        for structure_id in deleted:
+            ifcopenshell.api.material.remove_material_set(f, material=layer_set_of(existing[structure_id]))
+            ifcopenshell.api.root.remove_product(f, product=existing[structure_id])
+        # Cada muro conserva su línea de referencia (FR-015) y se regenera junto con los que tiene unidos.
+        changed = {}
+        for wall, reference, kind in affected:
+            if reference in walls.REFERENCES:
+                walls.set_usage(project, wall, reference)
+            if kind == "regenerable":
+                changed[wall.id()] = wall
+                for other in walls.connected_walls(wall):
+                    if walls.kind_of(project, other) != "locked":
+                        changed[other.id()] = other
+        walls.regenerate(project, list(changed.values()))
+        return sorted(changed)
+
+    changed_ids = project.transaction(apply)
+    return {"state": project.state(), "changed_ids": changed_ids}
 
 
 def add_default_catalog(project):

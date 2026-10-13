@@ -7,6 +7,7 @@ import { StoreyPanel } from "./storey-panel.js";
 import { Toolbox } from "./toolbox.js";
 import { InfoBox } from "./infobox.js";
 import { WallTool } from "./wall-tool.js";
+import { StructuresDialog } from "./structures-dialog.js";
 
 const $ = (id) => document.getElementById(id);
 const REFRESH_ALL = new Set(["new_project", "open_project", "undo", "redo"]);
@@ -30,6 +31,7 @@ const infobox = new InfoBox({
   onOpenStructures: () => handleAction("structures"),
   showMessage,
 });
+const structuresDialog = new StructuresDialog();
 const wallTool = new WallTool({
   viewports,
   meshes,
@@ -144,6 +146,10 @@ async function handleAction(action, arg) {
     case "fit":
       viewports.fit();
       return null;
+    case "structures": // Opciones > Estructuras compuestas… y el botón "…" del Info Box (FR-015)
+      if (!state.has_project) return null;
+      wallTool.cancel();
+      return structuresDialog.open(state, (payload) => dispatch("apply_structures", payload));
     default:
       return null;
   }
@@ -202,6 +208,6 @@ if (new URLSearchParams(location.search).get("test") === "1") {
   const { run } = await import("../../test/window-test.js");
   run({
     ready, getState: () => state, dispatch, handleAction, panel, viewports, meshes, showMessage,
-    toolbox, infobox, wallTool, setTool, getTool: () => tool, planPointer, keyDown,
+    toolbox, infobox, wallTool, setTool, getTool: () => tool, planPointer, keyDown, structuresDialog,
   });
 }

@@ -237,6 +237,150 @@ def test_muro_numero_201_rapido(project):
     assert (time.perf_counter() - started) < 0.2  # SC-006 (motor)
 
 
+# ---------- Historia 2: muros compuestos y catálogo ----------
+def structure_payload(state, structure_name, **changes):
+    """Una estructura del estado como la manda el diálogo (contracts/core_api.md, apply_structures)."""
+    row = next(s for s in state["structures"] if s["name"] == structure_name)
+    payload = {"id": row["id"], "name": row["name"],
+               "layers": [{"material": l["material_id"], "thickness": l["thickness"]} for l in row["layers"]]}
+    payload.update(changes)
+    return payload
+
+
+def test_muro_compuesto(project):
+    state = three_storeys(project)
+    ext30 = structure_id(state, "Muro exterior 30")
+    ring = [project.entity(i) for i in draw(project, RING, structure_id=ext30, material_id=None, thickness=None)]
+    usages = {ifcopenshell.util.element.get_material(w) for w in ring}
+    assert len(usages) == 4 and len({u.ForLayerSet for u in usages}) == 1  # usage propia, conjunto compartido
+    meshes = {m["id"]: m for m in execute(project, "meshes", {"ids": [w.id() for w in ring]})["meshes"]}
+    expected = [material_id(state, n) for n in ("Revoque", "Ladrillo", "Aislación", "Revoque")]
+    assert all([g["material_id"] for g in meshes[w.id()]["groups"]] == expected for w in ring)
+    assert sum(layer_area(project, w) for w in ring) == pytest.approx(6 * 4 - 5.4 * 3.4, rel=0.001)
+    # La primera capa (Revoque 0,02) queda del lado de afuera del recinto: en el muro de arriba, entre y 3,98 y 4,00.
+    top = ring[0]
+    first = layers.layer_polygons(top, 1.0)[0][1]
+    matrix = walls.placement_matrix(project, top)
+    world_y = [(matrix @ np.array([x, y, 0.0, 1.0]))[1] for x, y in first]
+    assert (min(world_y), max(world_y)) == pytest.approx((3.98, 4.0))
+
+
+def _new_state(project, payload):
+    return execute(project, "apply_structures", payload)["state"]
+
+
+@pytest.mark.parametrize("caso, error", [
+    ("vacio", "El nombre no puede quedar vacío."),
+    ("repetido", "Ya existe una estructura llamada «tabique 15»."),
+    ("sin_capas", "La estructura tiene que tener al menos una capa."),
+    ("capa_cero", "La capa 2 de «Muro exterior 30» tiene que tener un espesor mayor que 0."),
+    ("en_uso_1", "La estructura «Muro exterior 30» la usa 1 muro; no se puede borrar."),
+    ("en_uso_3", "La estructura «Muro exterior 30» la usan 3 muros; no se puede borrar."),
+    ("material_repetido", "Ya existe un material llamado «Ladrillo»."),
+    ("color", "El color tiene que tener la forma #rrggbb."),
+    ("material_inexistente", "El material elegido ya no existe."),
+])
+def test_apply_structures_reglas(project, caso, error):
+    state = three_storeys(project)
+    ext30 = structure_id(state, "Muro exterior 30")
+    walls_to_draw = {"en_uso_1": 1, "en_uso_3": 3}.get(caso, 0)
+    if walls_to_draw:
+        draw(project, [(0.0, 0.0), (4.0, 0.0), (4.0, 4.0), (0.0, 4.0)][:walls_to_draw + 1], closed=False,
+             structure_id=ext30, material_id=None, thickness=None)
+        state = project.state()
+    payload = {
+        "vacio": {"structures": [structure_payload(state, "Tabique 15", name="  ")]},
+        "repetido": {"structures": [structure_payload(state, "Muro exterior 30", name="tabique 15")]},
+        "sin_capas": {"structures": [structure_payload(state, "Tabique 15", layers=[])]},
+        "capa_cero": {"structures": [structure_payload(state, "Muro exterior 30", layers=[
+            {"material": material_id(state, "Revoque"), "thickness": 0.02},
+            {"material": material_id(state, "Ladrillo"), "thickness": 0.0}])]},
+        "en_uso_1": {"deleted": [ext30]},
+        "en_uso_3": {"deleted": [ext30]},
+        "material_repetido": {"materials": [{"ref": "m1", "name": "ladrillo", "color": "#123456"}]},
+        "color": {"materials": [{"ref": "m1", "name": "Piedra", "color": "rojo"}]},
+        "material_inexistente": {"structures": [structure_payload(state, "Tabique 15", layers=[
+            {"material": "m9", "thickness": 0.1}])]},
+    }[caso]
+    if caso == "material_repetido":
+        error = "Ya existe un material llamado «ladrillo»."
+    before = len(list(project.file))
+    with pytest.raises(EngineError) as raised:
+        execute(project, "apply_structures", payload)
+    assert str(raised.value) == error
+    assert len(list(project.file)) == before
+
+
+def test_apply_structures_crea_duplica_renombra_y_borra(project):
+    state = three_storeys(project)
+    history = len(project.file.history)
+    state = _new_state(project, {
+        "materials": [{"ref": "m1", "name": "Piedra", "color": "#8a8174"}],
+        "structures": [
+            {"id": None, "ref": "s1", "name": "Muro 35", "layers": [
+                {"material": "m1", "thickness": 0.30}, {"material": material_id(state, "Revoque"), "thickness": 0.05}]},
+            {"id": None, "ref": "s2", "name": "Tabique 15 (copia)", "copy_of": structure_id(state, "Tabique 15"),
+             "layers": structure_payload(state, "Tabique 15")["layers"]},
+            structure_payload(state, "Muro de hormigón 25", name="Hormigón 25"),
+        ],
+    })
+    assert len(project.file.history) == history + 1  # un solo paso de deshacer
+    names = [s["name"] for s in state["structures"]]
+    assert names == ["Hormigón 25", "Muro 35", "Muro exterior 30", "Tabique 15", "Tabique 15 (copia)"]
+    piedra = next(m for m in state["materials"] if m["name"] == "Piedra")
+    assert piedra["color"] == "#8a8174"
+    muro35 = next(s for s in state["structures"] if s["name"] == "Muro 35")
+    assert [(l["material_id"], l["thickness"]) for l in muro35["layers"]] == [(piedra["id"], 0.30), (material_id(state, "Revoque"), 0.05)]
+    renamed = project.entity(structure_id(state, "Hormigón 25"))
+    assert materials.layer_set_of(renamed).LayerSetName == "Hormigón 25"
+    copy = next(s for s in state["structures"] if s["name"] == "Tabique 15 (copia)")
+    assert copy["layers"] == next(s for s in state["structures"] if s["name"] == "Tabique 15")["layers"]
+    state = _new_state(project, {"deleted": [copy["id"]]})
+    assert "Tabique 15 (copia)" not in [s["name"] for s in state["structures"]]
+    execute(project, "undo", {})
+    assert "Tabique 15 (copia)" in [s["name"] for s in project.state()["structures"]]
+
+
+def test_editar_estructura_cambia_sus_muros(project, tmp_path):
+    state = three_storeys(project)
+    ext30 = structure_id(state, "Muro exterior 30")
+    common = {"structure_id": ext30, "material_id": None, "thickness": None, "height": 3.0}
+    a = execute(project, "create_wall", {"start": [0.0, 0.0], "end": [5.0, 0.0], **common, "reference": "exterior"})["wall_id"]
+    b = execute(project, "create_wall", {"start": [5.0, 0.0], "end": [5.0, 4.0], **common, "reference": "center"})["wall_id"]
+    layers_payload = structure_payload(state, "Muro exterior 30")["layers"]
+    layers_payload[2]["thickness"] = 0.08  # Aislación 0,05 → 0,08
+    result = execute(project, "apply_structures", {"structures": [structure_payload(state, "Muro exterior 30", layers=layers_payload)]})
+    assert {a, b} <= set(result["changed_ids"])
+    wa, wb = project.entity(a), project.entity(b)
+    assert walls.wall_info(project, wa)["thickness"] == pytest.approx(0.33)
+    ya = np.concatenate([poly[:, 1] for _, poly, _, _ in layers.layer_polygons(wa, 1.0)])
+    yb = np.concatenate([poly[:, 1] for _, poly, _, _ in layers.layer_polygons(wb, 1.0)])
+    assert (ya.min(), ya.max()) == pytest.approx((-0.33, 0.0))  # Exterior: la cara exterior sigue en la línea
+    assert (yb.min(), yb.max()) == pytest.approx((-0.165, 0.165))  # Centro: sigue centrado
+    assert walls.reference_of(project, wa) == "exterior" and walls.reference_of(project, wb) == "center"
+    assert len(project.file.by_type("IfcRelConnectsPathElements")) == 1
+    path = str(tmp_path / "editada.ifc")
+    execute(project, "save_project", {"path": path})
+    assert execute(project, "validate_file", {"path": path})["errors"] == 0
+    execute(project, "undo", {})
+    assert walls.wall_info(project, project.entity(a))["thickness"] == pytest.approx(0.30)
+
+
+def test_catalogo_guardado_y_reabierto(project, tmp_path):
+    state = three_storeys(project)
+    state = _new_state(project, {
+        "materials": [{"ref": "m1", "name": "Piedra", "color": "#8a8174"}],
+        "structures": [{"id": None, "ref": "s1", "name": "Muro 35", "layers": [
+            {"material": "m1", "thickness": 0.30}, {"material": material_id(state, "Revoque"), "thickness": 0.05}]}]})
+    before = (state["materials"], [(s["name"], s["thickness"], len(s["layers"])) for s in state["structures"]])
+    path = str(tmp_path / "catalogo.ifc")
+    execute(project, "save_project", {"path": path})
+    state = execute(project, "open_project", {"path": path})["state"]
+    after = (state["materials"], [(s["name"], s["thickness"], len(s["layers"])) for s in state["structures"]])
+    assert [(m["name"], m["color"]) for m in after[0]] == [(m["name"], m["color"]) for m in before[0]]
+    assert after[1] == before[1]
+
+
 # ---------- Base (fase 2) ----------
 def test_proyecto_nuevo_trae_el_catalogo(project):
     state = execute(project, "new_project", {})["state"]
