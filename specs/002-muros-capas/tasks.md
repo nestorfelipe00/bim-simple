@@ -651,7 +651,7 @@ reabrir: igual.
   usuario hizo la prueba y respondió "prueba manual superada". Nada que corregir.
 - [X] T045 Marcar `**Estado**: Implementada` en [spec.md](spec.md), comprobar que todas las tareas están marcadas y
   hacer el commit final con los resultados de T044.
-- [ ] T046 ⛔ PERMISO: pedir permiso para subir los commits a GitHub (`git push origin main`).
+- [X] T046 ⛔ PERMISO: pedir permiso para subir los commits a GitHub (`git push origin main`).
 
 ---
 
